@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#d97757">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="BREW">
+<title>BREW 咖啡落單</title>
+<style>
+*{box-sizing:border-box;margin:0}
+:root{--bg:#fff;--fg:#141413;--mut:#6b6a66;--card:#f6f3ee;--line:#e4ded3;--acc:#d97757;--ok:#2f8f5b;--warn:#e8a317;--bad:#c0392b;color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141413;--fg:#f4f1ea;--mut:#a8a399;--card:#1f1e1c;--line:#34322e;--acc:#e08a6b;--bad:#ef7b6c;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#141413;--fg:#f4f1ea;--mut:#a8a399;--card:#1f1e1c;--line:#34322e;--acc:#e08a6b;--bad:#ef7b6c;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{background:var(--bg);color:var(--fg);font:15px/1.5 -apple-system,"PingFang HK","Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif;min-height:100%;padding-bottom:120px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:10}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);border-bottom:1px solid var(--line)}
+.wrap{max-width:520px;margin:0 auto;padding:0 16px}
+header .wrap{display:flex;align-items:center;justify-content:space-between;height:52px}
+.logo{font-weight:900;font-size:20px;letter-spacing:.04em}
+.seg{display:flex;background:var(--card);border-radius:12px;padding:3px;margin-top:14px}
+.seg button{flex:1;border:0;background:none;color:var(--mut);font:inherit;font-weight:700;font-size:13px;padding:6px 6px;border-radius:9px;cursor:pointer;min-height:36px}
+.seg button.on{background:var(--fg);color:var(--bg)}
+.seg i{font-style:normal;background:var(--warn);color:#141413;border-radius:9px;padding:0 6px;margin-left:4px;font-size:12px}
+.hero{text-align:center;padding:22px 0 8px}
+.mw{position:relative;width:120px;margin:0 auto}
+.mw svg{width:120px;height:auto;animation:bob 2.4s ease-in-out infinite;overflow:visible}
+.badge{position:absolute;right:-14px;top:2px;background:var(--fg);color:var(--bg);font-weight:800;font-size:12px;padding:3px 11px;border-radius:99px}
+h1{font-size:25px;font-weight:900;line-height:1.2;margin-top:12px}
+.sub{color:var(--mut);margin-top:4px}
+.pop .mw{animation:pop .55s cubic-bezier(.34,1.56,.64,1)}
+@keyframes bob{50%{transform:translateY(-6px)}}
+@keyframes pop{0%{transform:scale(.7)}100%{transform:scale(1)}}
+@keyframes ring{0%{box-shadow:0 0 0 0 rgba(232,163,23,.6)}100%{box-shadow:0 0 0 12px rgba(232,163,23,0)}}
+.prog{display:flex;gap:6px;margin:12px 0 4px}
+.prog div{flex:1;font-size:12px;color:var(--mut);font-weight:700}
+.prog div::before{content:"";display:block;height:5px;border-radius:3px;background:var(--line);margin-bottom:5px}
+.prog div.on{color:var(--fg)}.prog div.on::before{background:var(--acc)}
+.shop{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;margin:10px 0}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--mut)}.dot.ok{background:var(--ok)}
+section{margin-top:18px}
+h3{font-size:14px;font-weight:800;margin-bottom:8px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.row{display:flex;flex-wrap:wrap;gap:8px}
+.lab{font-size:12px;color:var(--mut);margin:10px 0 6px;font-weight:700}
+.chip{border:1.5px solid var(--line);background:var(--bg);color:var(--fg);border-radius:14px;padding:9px 13px;font:inherit;font-weight:700;min-height:46px;cursor:pointer;text-align:left;transition:transform .12s}
+.chip:active{transform:scale(.96)}
+.chip.on{background:var(--acc);border-color:var(--acc);color:#fff}
+.chip small{display:block;font-weight:500;font-size:12px;opacity:.8}
+.qty{display:flex;align-items:center;gap:14px}
+.qty button{width:46px;height:46px;border-radius:50%;border:1.5px solid var(--line);background:var(--bg);color:var(--fg);font-size:22px;cursor:pointer}
+.qty b{font-size:20px;min-width:24px;text-align:center}
+input[type=text],input[type=tel],input[type=password],input[type=url],select{width:100%;border:1.5px solid var(--line);background:var(--bg);color:var(--fg);border-radius:12px;padding:12px;font:inherit;margin-top:8px}
+:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.card{background:var(--card);border-radius:18px;padding:16px;margin-top:16px}
+.kv{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.kv:first-child{border-top:0}
+.kv b{font-size:20px;font-variant-numeric:tabular-nums}
+.mini{border:1.5px solid var(--fg);background:none;color:var(--fg);border-radius:10px;padding:6px 12px;font:inherit;font-weight:700;font-size:13px;cursor:pointer;min-height:36px;margin-top:8px}
+ol{padding-left:20px;margin-top:6px}li{margin:6px 0}
+.link{background:none;border:0;color:var(--mut);text-decoration:underline;font:inherit;font-size:13px;cursor:pointer;margin-top:10px;padding:6px 0;display:block}
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--bg);border-top:1px solid var(--line);padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px))}
+.bar .wrap{display:flex;align-items:center;gap:14px;padding:0}
+.tot{font-size:12px;color:var(--mut);line-height:1.2}.tot b{display:block;font-size:24px;color:var(--fg);font-variant-numeric:tabular-nums}
+.btn{flex:1;border:0;border-radius:16px;background:var(--acc);color:#fff;font:inherit;font-weight:900;font-size:17px;min-height:54px;cursor:pointer;text-decoration:none;display:flex;align-items:center;justify-content:center;padding:0 14px}
+.btn:active{transform:scale(.97)}.btn:disabled{background:var(--line);color:var(--mut);cursor:not-allowed}
+.btn.ok{background:var(--ok)}.btn.warn{background:var(--warn);color:#141413}.btn.dark{background:var(--fg);color:var(--bg)}
+.btn.inline{flex:none;width:100%;margin-top:12px}
+.ord{background:var(--card);border-radius:18px;padding:14px;margin-top:12px}
+.ord.hot{animation:ring 1.4s ease-out infinite}
+.ord h4{font-size:18px;font-weight:900;display:flex;justify-content:space-between}
+.pill{font-size:12px;font-weight:800;border-radius:99px;padding:2px 10px;background:var(--line);color:var(--fg)}
+.pill.paid{background:var(--warn);color:#141413}.pill.making{background:var(--acc);color:#fff}.pill.ready{background:var(--ok);color:#fff}
+.m{color:var(--mut);font-size:14px;margin-top:2px}
+.rcimg{max-width:100%;border-radius:12px;margin-top:8px;display:block}
+.qr{width:230px;height:230px;margin:14px auto;border-radius:12px;overflow:hidden;background:#fff}.qr svg{width:100%;height:100%;display:block}
+.url{word-break:break-all;font-size:13px;color:var(--mut);margin-top:8px}
+.st{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.st div{border:1.5px solid var(--line);border-radius:16px;padding:12px}
+.st small{color:var(--mut);font-weight:700;font-size:12px;display:block}.st b{font-size:22px;font-variant-numeric:tabular-nums;display:block}.st span{font-size:12px;color:var(--mut)}
+.st .g{background:rgba(47,143,91,.1)}.st .w{background:rgba(232,163,23,.12)}.st .r{background:rgba(192,57,43,.09)}
+.bd{border:1.5px solid var(--line);border-radius:16px;padding:12px;margin-top:12px}
+.bd div{display:flex;justify-content:space-between;font-size:14px;margin-top:8px;font-variant-numeric:tabular-nums}
+.bd i{display:block;height:7px;border-radius:4px;background:var(--line);margin-top:4px;overflow:hidden}.bd i u{display:block;height:100%;background:var(--acc)}
+.tw{overflow-x:auto;margin-top:12px;border:1.5px solid var(--line);border-radius:12px}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:13px;font-variant-numeric:tabular-nums}
+th,td{padding:8px;text-align:left;border-top:1px solid var(--line);white-space:nowrap}th{background:var(--card);border-top:0;font-weight:800}
+.note{background:var(--card);border-radius:12px;padding:10px 12px;font-size:13px;color:var(--mut);margin-top:12px}
+#toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:9px 16px;border-radius:12px;font-weight:700;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:30;max-width:90%}
+#toast.on{opacity:1}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+</head>
+<body>
+<header><div class="wrap"><span class="logo">BREW</span><button class="mini" id="lg" style="margin:0" onclick="setLang()">EN</button></div></header>
+<main class="wrap" id="app"></main>
+<div id="bar"></div>
+<div id="toast" role="status"></div>
+<script>
+const T={
+loading:["載入中…","Loading…"],badlink:["呢條店鋪連結無效","This shop link is not valid"],neterr:["連線失敗，請檢查網絡","Connection failed"],
+cclosed:["咖啡師未開舖","Shop is closed"],cclosed2:["咖啡師開始接單後會自動更新","Updates once the barista opens the shop"],cmenu:["今日飲乜？","What are you having?"],cmenu2:["揀好撳底部掣，下一步教你付款","Pick, then tap the button below to pay"],
+bean:["咖啡豆","Beans"],house:["自家豆","House blend"],soe:["SOE 單一產地","Single origin"],plus5:["加 HK$5","+HK$5"],drink:["飲品","Drink"],hot:["熱飲","Hot"],iced:["凍飲","Iced"],spec:["特調","Specials"],
+size:["杯量","Size"],S:["細杯","Small"],M:["中杯","Medium"],L:["大杯","Large"],std:["標準","Standard"],milk:["奶類","Milk"],FM:["全脂奶","Whole"],SM:["脫脂奶","Skim"],OM:["燕麥奶 +$4","Oat +$4"],OMs:["燕麥奶","Oat"],nomilk:["齋啡免奶","Black"],
+qty:["數量","Quantity"],name:["稱呼（選填）","Name (optional)"],phone:["電話（選填，用於客人記錄）","Phone (optional, for CRM)"],note:["備註","Note"],noteph:["備註，例如少冰","Note, e.g. less ice"],
+total:["應付","Total"],place:["落單，去付款","Order and pay"],closedbtn:["未開始接單","Not open yet"],
+payh:["去銀行 App 轉數快","Pay with FPS in your bank app"],pays:["過數後上載收據，咖啡師即時收到","Upload the receipt after paying"],num:["單號","Order"],fps:["轉數快號碼","FPS number"],amt:["金額","Amount"],copy:["複製","Copy"],copied:["已複製","Copied"],
+s3:["3 步完成","3 steps"],p1:["打開銀行 App，揀轉數快，貼上電話同金額","Open your bank app, choose FPS, paste the number and amount"],p2:["備註填單號，確認過數","Put the order number in the remark"],p3:["返嚟撳「上載轉數快收據」，揀截圖","Come back, tap Upload receipt and pick the screenshot"],
+upload:["上載轉數快收據","Upload FPS receipt"],sending:["傳送中…","Sending…"],uperr:["上載失敗，請試細啲張圖","Upload failed, try a smaller image"],cancel:["修改或取消張單","Edit or cancel order"],
+waith:["收據已傳送","Receipt sent"],waits:["等咖啡師核對，好快有回音","Waiting for the barista to check"],mkh:["🟡 沖緊稍等","🟡 Brewing, please wait"],mks:["咖啡師已確認，正在沖製","Payment confirmed, your drink is being made"],rdh:["好咗！可以取貨","Ready for pickup!"],rds:["取貨時報單號","Quote your order number"],again:["再落一杯","Order again"],
+st1:["落單","Order"],st2:["過數","Pay"],st3:["沖製","Brew"],st4:["取貨","Pickup"],
+demo:["示範模式：資料只存喺呢部裝置。要多部手機同步，請將 server.js 同本檔一齊放上伺服器","Demo mode: data stays on this device. Run server.js with this file to sync phones"],invite:["邀請碼（如有）","Invite code (if any)"],e_invite:["需要邀請碼","Invite code required"],e_rate:["輸入錯誤太多次，請 15 分鐘後再試","Too many attempts, try again in 15 minutes"],
+newshop:["開新店","New shop"],login:["登入","Log in"],shopname:["店名","Shop name"],fpsph:["轉數快電話號碼（8 位）","FPS phone (8 digits)"],pin:["6 位數字 PIN","6-digit PIN"],scode:["店鋪代碼","Shop code"],regbtn:["開店","Create shop"],loginbtn:["登入","Log in"],regerr:["請填店名、8 位電話同 6 位數字 PIN","Enter shop name, 8-digit phone and 6-digit PIN"],logerr:["代碼或 PIN 唔啱","Wrong code or PIN"],
+tab_o:["訂單","Orders"],tab_a:["核數","Audit"],tab_s:["設定","Settings"],a_s:["匯總","Summary"],a_c:["客人","Customers"],a_t:["明細","Details"],
+openbtn:["開始接單","Start taking orders"],pausebtn:["暫停接單","Pause orders"],onl:["正常接單中","Taking orders"],off:["未開始接單","Not taking orders"],soeh:["今日 SOE 豆（選填）","Todays single origin (optional)"],orders:["張訂單","orders"],noord:["暫時未有訂單","No orders yet"],
+st_unpaid:["等過數","Awaiting payment"],st_paid:["已收據","Receipt in"],st_making:["製作中","Brewing"],st_ready:["可取貨","Ready"],st_done:["已取","Picked up"],st_cancel:["已取消","Cancelled"],
+btnmk:["🟡 沖緊稍等","🟡 Brewing, please wait"],btnrd:["好咗，通知取貨","Ready, notify customer"],btndn:["客人已取走","Picked up"],waitpay:["等客人過數","Waiting for payment"],rcpt:["睇收據","View receipt"],cxl:["取消單","Cancel order"],
+day:["核數日期","Date"],all:["全部日子","All days"],csv:["匯出 CSV","Export CSV"],
+k1:["總單數 / 總杯數","Orders / cups"],k1b:["有效","valid"],k1c:["取消","cancelled"],k2:["已對數實收","Reconciled cash"],k2b:["有效總額","Valid total"],k3:["待對數金額","To reconcile"],k4:["對數完成率","Reconciled %"],k4b:["平均每單","Avg per order"],k5:["取消率 / 取消金額","Cancel rate / amount"],k6:["首單至尾單","First to last order"],k6b:["高峰時段","Peak hour"],
+bmilk:["奶類百分比","Milk"],bbean:["咖啡豆百分比","Beans"],per:["單","orders"],
+d_date:["日期","Date"],d_n:["總單(杯)","Orders (cups)"],d_vs:["有效金額","Valid $"],d_ks:["已對數","Reconciled"],d_ps:["待對數","Pending"],d_kr:["對數率","Rec. %"],d_cr:["取消率","Cancel %"],d_fl:["首尾單","First/last"],
+c_name:["客人","Customer"],c_ph:["電話","Phone"],c_n:["單數","Orders"],c_sp:["累計消費","Spend"],c_pc:["佔總額 %","Share %"],c_ks:["已對數","Reconciled"],c_last:["最近落單","Last order"],
+t_no:["單號","No."],t_dt:["日期時間","Date/time"],t_c:["客人","Customer"],t_it:["內容","Items"],t_amt:["金額","Amount"],t_pc:["佔當日 %","Day %"],t_st:["狀態","Status"],t_ck:["對數","Rec."],
+sh1:["店鋪連結（客人掃 QR 或開連結落單）","Shop link (customers scan the QR or open it)"],shq:["下載 QR","Download QR"],shcode:["你嘅店鋪代碼（登入用）","Your shop code (for login)"],logout:["登出呢部裝置","Log out of this device"],
+cfgn:["客人唔使登入、唔使電郵；咖啡師用店鋪代碼加 6 位數字 PIN。","Customers need no login; baristas use shop code plus a 6-digit PIN."]};
+const D=[["H01","熱美式","Hot Americano",28,"hot",1],["H02","熱 Latte","Hot Latte",36,"hot"],["H03","熱 Cappuccino","Hot Cappuccino",36,"hot"],["H04","熱 Flat White","Hot Flat White",36,"hot"],["H05","熱 Mocha","Hot Mocha",40,"hot"],["C01","凍美式","Iced Americano",32,"iced",1],["C02","凍 Latte","Iced Latte",40,"iced"],["C03","凍 Cappuccino","Iced Cappuccino",40,"iced"],["C04","凍 Mocha","Iced Mocha",44,"iced"],["S01","Dirty","Dirty",40,"spec"],["S02","Espresso Tonic","Espresso Tonic",42,"spec",1]].map(([id,z,e,p,g,b])=>({id,z,e,p,g,b:!!b}));
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const ls=(k,v)=>{try{if(v===undefined)return localStorage.getItem(k);v===null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}};
+const J=s=>{try{return JSON.parse(s)||{}}catch(e){return{}}};
+let lang=ls("brewlang")||"zh";const t=k=>(T[k]||[k,k])[lang==="en"?1:0];
+const hp=new URLSearchParams((location.hash||"").slice(1));
+let code=(hp.get("s")||"").replace(/[^a-z0-9]/g,""),S=J(ls("brew5s")),shop,ords=[],ord=null,my=ls("brew5my_"+code),tab="o",at="s",fd="all",rc={},fatal="",lastT="",lastPaid=0,busyUp=false;
+const sel={bean:"house",drink:"H02",size:"M",milk:"OM",qty:1,note:"",name:"",phone:""};
+const dk=ts=>new Date(ts-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
+const hm=ts=>new Date(ts).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});
+const rnd=n=>Array.from(crypto.getRandomValues(new Uint8Array(n)),b=>"abcdefghjkmnpqrstuvwxyz23456789"[b%31]).join("");
+const H=s=>{let a=3735928559,b=1103547991;for(let i=0;i<s.length;i++){const c=s.charCodeAt(i);a=Math.imul(a^c,2654435761);b=Math.imul(b^c,1597334677)}a=Math.imul(a^a>>>16,2246822507)^Math.imul(b^b>>>13,3266489909);b=Math.imul(b^b>>>16,2246822507)^Math.imul(a^a>>>13,3266489909);return(4294967296*(2097151&b)+(a>>>0)).toString(36)};
+const dn=o=>{const d=D.find(x=>x.id===o.drink);return d?(lang==="en"?d.e:d.z):o.drink};
+const mk=o=>{const d=D.find(x=>x.id===o.drink)||{};return d.b?"-":o.milk};
+function desc(o){const d=D.find(x=>x.id===o.drink)||{},a=[o.bean==="soe"?"SOE"+(o.bn?" "+o.bn:""):t("house"),dn(o)];if(d.g!=="spec")a.push(t(o.size));if(!d.b)a.push(t(o.milk==="OM"?"OMs":o.milk));return a.join(" / ")+" × "+o.qty}
+function calc(x){const d=D.find(y=>y.id===x.drink);let p=d.p;if(d.g!=="spec")p+=x.size==="L"?4:x.size==="S"?-4:0;if(!d.b&&x.milk==="OM")p+=4;if(x.bean==="soe")p+=5;return p*x.qty}
+const price=()=>calc(sel);
+const vib=p=>{try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}};
+const no=n=>"#"+n;
+function toast(m){const e=$("#toast");e.textContent=m;e.classList.add("on");clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove("on"),1900)}
+function copy(x){(navigator.clipboard?navigator.clipboard.writeText(x):Promise.reject()).then(()=>toast(t("copied")),()=>toast(x))}
+function setLang(){lang=lang==="zh"?"en":"zh";ls("brewlang",lang);render()}
+const put=(el,h)=>{if(el._h!==h){el.innerHTML=h;el._h=h}};
+
+/* ---------- data layer: same-origin API (server.js), or local demo ---------- */
+let MODE="api",ordsV=0;
+function demo(m,p,b){const db=J(ls("brew5db")),sv=()=>ls("brew5db",JSON.stringify(db)),E=c=>{throw Object.assign(new Error(c),{status:c})};db.s=db.s||{};p=p.split("?")[0];const k=p.split("/");
+ if(p==="register"){const c=rnd(8);db.s[c]={shop:{name:b.name,fps:b.fps,open:false,soe:""},ph:H(b.pin+c),o:{},r:{}};sv();return{code:c,token:"demo"}}
+ if(p==="login"){const s=db.s[b.code];if(!s||s.ph!==H(b.pin+b.code))E(401);return{code:b.code,token:"demo"}}
+ const s=db.s[k[1]];if(!s)E(404);const o=s.o;
+ if(k[2]==="logout")return{ok:1};
+ if(k[2]==="shop"){if(m==="PATCH"){Object.assign(s.shop,b);sv()}return s.shop}
+ if(!k[3]){if(m==="GET")return{v:Date.now(),orders:Object.entries(o).map(([id,v])=>({id,...v}))};const id=Date.now().toString(36)+rnd(3),v={...b,ts:Date.now(),n:100+Math.floor(Math.random()*900),s:"unpaid",tot:calc(b),bn:b.bean==="soe"?s.shop.soe:""};o[id]=v;sv();return{id,...v}}
+ const v=o[k[3]];if(!v)E(404);
+ if(k[4]==="receipt"){if(m==="PUT"){s.r[k[3]]=b.d;Object.assign(v,{s:"paid",rc:1,pt:Date.now()});sv();return{ok:1}}return{d:s.r[k[3]]||""}}
+ if(m==="DELETE"){delete o[k[3]];sv();return{ok:1}}
+ if(m==="PATCH"){if(b.chk!==undefined){b.chk?v.chk=1:delete v.chk;delete b.chk}Object.assign(v,b);sv()}
+ return{id:k[3],...v}}
+async function rq(m,p,b){if(MODE==="demo")return demo(m,p,b);let x;try{x=await fetch("/api/"+p,{method:m,headers:{"Content-Type":"application/json",...(S.token?{Authorization:"Bearer "+S.token}:{})},body:b===undefined?undefined:JSON.stringify(b)})}catch(e){throw Object.assign(new Error("net"),{status:0})}
+ const j=await x.json().catch(()=>({}));if(!x.ok){if(x.status===401&&S.token&&p!=="login"){ls("brew5s",null);S={}}throw Object.assign(new Error(j.error||x.status),{status:x.status})}return j}
+
+/* ---------- ui helpers ---------- */
+const MASCOT=`<svg viewBox="0 0 16 14" aria-hidden="true"><ellipse cx="8" cy="13.2" rx="6" ry=".7" fill="currentColor" opacity=".12"/><g fill="var(--acc)"><rect x="3" y="1" width="10" height="7"/><rect x="1" y="3" width="2" height="3"/><rect x="13" y="3" width="2" height="3"/><rect x="4" y="8" width="2" height="3"/><rect x="10" y="8" width="2" height="3"/><rect x="7" y="8" width="2" height="2"/></g><g fill="none" stroke="#141413" stroke-width=".6" stroke-linecap="square"><polyline points="5,3.2 6.8,4.2 5,5.2"/><polyline points="11,3.2 9.2,4.2 11,5.2"/></g></svg>`;
+function msg(m){put($("#app"),`<div class="hero"><div class="mw">${MASCOT}</div><h1>${esc(m)}</h1></div>`);put($("#bar"),"")}
+function hero(n,h,s){const p=lastT!==h;lastT=h;return `<div class="hero ${p?"pop":""}"><div class="mw">${MASCOT}${n?`<span class="badge">${n}/4</span>`:""}</div><h1>${h}</h1><p class="sub">${s}</p></div>`+(n?`<div class="prog">${[1,2,3,4].map(i=>`<div class="${i<=n?"on":""}">${t("st"+i)}</div>`).join("")}</div>`:"")}
+const chips=g=>D.filter(x=>x.g===g).map(x=>`<button class="chip${sel.drink===x.id?" on":""}" onclick="pick('drink','${x.id}')">${lang==="en"?x.e:x.z}<small>HK$${x.p}</small></button>`).join("");
+function pick(k,v){sel[k]=v;render()}
+function step(n){sel.qty=Math.max(1,Math.min(10,sel.qty+n));render()}
+function qrSvg(x){try{const z=qrcode(0,"M");z.addData(x);z.make();const n=z.getModuleCount();let p="";for(let r=0;r<n;r++)for(let c=0;c<n;c++)if(z.isDark(r,c))p+=`M${c+2} ${r+2}h1v1h-1z`;return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${n+4} ${n+4}" shape-rendering="crispEdges"><rect width="100%" height="100%" fill="#fff"/><path d="${p}" fill="#000"/></svg>`}catch(e){return""}}
+function save(name,text,type){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type:type||"text/csv;charset=utf-8"}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
+const q=v=>`"${String(v==null?"":v).replace(/"/g,'""')}"`;
+const csv=(n,rows)=>save(n,"\ufeff"+rows.map(r=>r.map(q).join(",")).join("\r\n"));
+
+/* ---------- customer ---------- */
+const clr=()=>{ls("brew5my_"+code,null);my=null;ord=null};
+async function pollC(){try{shop=await rq("GET",`s/${code}/shop`);if(my){try{const o=await rq("GET",`s/${code}/o/${my}`);if(o.s==="done"||o.s==="cancel")clr();else{if(o.s==="ready"&&(!ord||ord.s!=="ready"))vib([120,60,120]);ord=o}}catch(e){if(e.status===404)clr();else throw e}}fatal=""}catch(e){if(e.status===404)shop=null;else if(shop===undefined)fatal=t("neterr")}render()}
+async function place(){if(!shop||!shop.open)return toast(t("closedbtn"));try{const o=await rq("POST",`s/${code}/o`,{bean:sel.bean,drink:sel.drink,size:sel.size,milk:sel.milk,qty:sel.qty,name:sel.name,phone:sel.phone,note:sel.note});my=o.id;ls("brew5my_"+code,o.id);ord=o;render()}catch(e){toast(t("neterr"))}}
+async function withdraw(){try{if(ord&&ord.s==="unpaid")await rq("DELETE",`s/${code}/o/${my}`)}catch(e){}clr();render()}
+/* compress a receipt screenshot to about 99KB (decoded) before upload */
+function shrink(f,max=99*1024){return new Promise((ok,bad)=>{const r=new FileReader();r.onerror=bad;r.onload=()=>{const im=new Image();im.onerror=bad;im.onload=()=>{let w=Math.min(1000,im.width);for(let i=0;i<8;i++){const c=document.createElement("canvas");c.width=w;c.height=Math.round(im.height*w/im.width);const x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,c.width,c.height);x.drawImage(im,0,0,c.width,c.height);for(let qy=.85;qy>=.35;qy-=.1){const d=c.toDataURL("image/jpeg",qy);if((d.length-23)*.75<=max)return ok(d)}w=Math.round(w*.8)}bad()};im.src=r.result};r.readAsDataURL(f)})}
+async function rcpt(inp){const f=inp.files&&inp.files[0];if(!f||!ord||busyUp)return;busyUp=true;toast(t("sending"));try{const d=await shrink(f);await rq("PUT",`s/${code}/o/${ord.id}/receipt`,{d});ord.s="paid";render()}catch(e){toast(t("uperr"))}busyUp=false;inp.value=""}
+function cust(){
+  if(fatal&&shop===undefined)return msg(fatal);if(shop===undefined)return msg(t("loading"));if(!shop)return msg(t("badlink"));
+  const st=ord?ord.s:"menu";let h="",b="";
+  if(st==="menu"){
+    h=hero(1,shop.open?t("cmenu"):t("cclosed"),shop.open?t("cmenu2"):t("cclosed2"))+`<div class="shop"><span class="dot ${shop.open?"ok":""}"></span>${esc(shop.name)}</div>`;
+    const c=D.find(x=>x.id===sel.drink);
+    h+=`<section><h3>${t("bean")}</h3><div class="g2"><button class="chip${sel.bean==="house"?" on":""}" onclick="pick('bean','house')">${t("house")}</button><button class="chip${sel.bean==="soe"?" on":""}" onclick="pick('bean','soe')">${t("soe")}<small>${shop.soe?esc(shop.soe)+"，":""}${t("plus5")}</small></button></div></section>`;
+    h+=`<section><h3>${t("drink")}</h3>${["hot","iced","spec"].map(g=>`<div class="lab">${t(g)}</div><div class="row">${chips(g)}</div>`).join("")}</section>`;
+    if(c.g!=="spec")h+=`<section><h3>${t("size")}</h3><div class="row">${["S","M","L"].map(k=>`<button class="chip${sel.size===k?" on":""}" onclick="pick('size','${k}')">${t(k)}<small>${k==="S"?"-$4":k==="L"?"+$4":t("std")}</small></button>`).join("")}</div></section>`;
+    if(!c.b)h+=`<section><h3>${t("milk")}</h3><div class="row">${["FM","SM","OM"].map(k=>`<button class="chip${sel.milk===k?" on":""}" onclick="pick('milk','${k}')">${t(k)}</button>`).join("")}</div></section>`;
+    h+=`<section><h3>${t("qty")}</h3><div class="qty"><button onclick="step(-1)" aria-label="-">−</button><b>${sel.qty}</b><button onclick="step(1)" aria-label="+">+</button></div></section>`;
+    h+=`<section><input type="text" value="${esc(sel.name)}" placeholder="${t("name")}" oninput="sel.name=this.value"><input type="tel" value="${esc(sel.phone)}" placeholder="${t("phone")}" oninput="sel.phone=this.value"><input type="text" value="${esc(sel.note)}" placeholder="${t("noteph")}" oninput="sel.note=this.value"></section>`;
+    if(MODE==="demo")h+=`<p class="note">${t("demo")}</p>`;
+    b=`<div class="wrap"><div class="tot">${t("total")}<b>HK$${price()}</b></div><button class="btn" ${shop.open?"":"disabled"} onclick="place()">${shop.open?t("place"):t("closedbtn")}</button></div>`;
+  }else if(st==="unpaid"){
+    h=hero(2,t("payh"),t("pays"))+`<div class="card"><div class="kv"><span>${t("num")}</span><b>${no(ord.n)}</b></div><div class="kv"><span>${esc(desc(ord))}</span></div><div class="kv"><span>${t("fps")}<br><b>${esc(shop.fps)}</b></span><button class="mini" onclick="copy('${esc(shop.fps)}')">${t("copy")}</button></div><div class="kv"><span>${t("amt")}<br><b>HK$${ord.tot}</b></span><button class="mini" onclick="copy('${ord.tot}')">${t("copy")}</button></div></div>`;
+    h+=`<div class="card"><h3>${t("s3")}</h3><ol><li>${t("p1")}</li><li>${t("p2")} <b>${no(ord.n)}</b></li><li>${t("p3")}</li></ol></div><button class="link" onclick="withdraw()">${t("cancel")}</button>`;
+    b=`<div class="wrap"><label class="btn ok">${t("upload")}<input type="file" accept="image/*" hidden onchange="rcpt(this)"></label></div>`;
+  }else{
+    const m={paid:[3,t("waith"),t("waits")],making:[3,t("mkh"),t("mks")],ready:[4,t("rdh"),t("rds")+" "+no(ord.n)]}[st];
+    h=hero(m[0],m[1],m[2])+`<div class="card"><div class="kv"><span>${t("num")}</span><b>${no(ord.n)}</b></div><div class="kv"><span>${esc(desc(ord))}</span><b>HK$${ord.tot}</b></div></div>`;
+    b=st==="ready"?`<div class="wrap"><button class="btn ok" onclick="withdraw()">${t("again")}</button></div>`:"";
+  }
+  put($("#app"),h);put($("#bar"),b?`<div class="bar">${b}</div>`:"");
+}
+
+/* ---------- barista ---------- */
+const PAID=o=>["paid","making","ready","done"].includes(o.s);
+const ACT={paid:["making","btnmk","warn"],making:["ready","btnrd","ok"],ready:["done","btndn","dark"]};
+const pc=(a,b)=>b?(a*100/b).toFixed(1):"0.0";
+let ordsT=null;
+async function pollB(){if(!S.code)return;try{shop=await rq("GET",`s/${S.code}/shop`);const r=await rq("GET",`s/${S.code}/o?v=${ordsV}`);if(!r.same){ords=r.orders;ordsV=r.v}const n=ords.filter(o=>o.s==="paid").length;if(n>lastPaid)vib([200,80,200]);lastPaid=n;document.title=(n?`(${n}) `:"")+"BREW";fatal=""}catch(e){if(e.status!==401)fatal=t("neterr")}render()}
+function startB(){if(ordsT)return;pollB();ordsT=setInterval(pollB,3000)}
+function authErr(e){toast(e.status===429?t("e_rate"):e.message==="invite"?t("e_invite"):e.status===401?t("logerr"):t("neterr"))}
+async function reg(){const n=$("#rn").value.trim(),f=$("#rf").value.replace(/\D/g,""),p=$("#rp").value,iv=($("#ri")||{}).value||"";if(!n||f.length<8||!/^\d{6}$/.test(p))return toast(t("regerr"));try{const r=await rq("POST","register",{name:n,fps:f,pin:p,invite:iv});S={code:r.code,token:r.token};ls("brew5s",JSON.stringify(S));startB()}catch(e){authErr(e)}}
+async function logIn(){const c=$("#lc").value.trim().toLowerCase(),p=$("#lp").value;try{const r=await rq("POST","login",{code:c,pin:p});S={code:r.code,token:r.token};ls("brew5s",JSON.stringify(S));startB()}catch(e){authErr(e)}}
+function logOut(){rq("POST",`s/${S.code}/logout`).catch(()=>{}).then(()=>{ls("brew5s",null);location.reload()})}
+const upd=(id,p)=>rq("PATCH",`s/${S.code}/o/${id}`,p).then(()=>{ordsV=0;pollB()}).catch(()=>toast(t("neterr")));
+const setS=(id,s)=>upd(id,{s});
+const chk=(id,v)=>upd(id,{chk:!v});
+const shopUpd=p=>rq("PATCH",`s/${S.code}/shop`,p).then(pollB).catch(()=>toast(t("neterr")));
+async function showRc(id){if(rc[id]==null){try{rc[id]=(await rq("GET",`s/${S.code}/o/${id}/receipt`)).d||""}catch(e){return toast(t("uperr"))}}render()}
+function card(o){const a=ACT[o.s];return `<div class="ord ${o.s==="paid"?"hot":""}"><h4><span>${no(o.n)} ${esc(o.name)}</span><span class="pill ${o.s}">${t("st_"+o.s)}</span></h4><p class="m">${hm(o.ts)}　${esc(desc(o))}　HK$${o.tot}</p>${o.phone?`<p class="m">${esc(o.phone)}</p>`:""}${o.note?`<p class="m">${t("note")}：${esc(o.note)}</p>`:""}${o.rc?`<button class="mini" onclick="showRc('${o.id}')">${t("rcpt")}</button>${rc[o.id]?`<img class="rcimg" src="${esc(rc[o.id])}" alt="">`:""}`:""}${a?`<button class="btn ${a[2]} inline" onclick="setS('${o.id}','${a[0]}')">${t(a[1])}</button>`:`<button class="btn inline" disabled>${t("waitpay")}</button>`}${o.s==="unpaid"||o.s==="paid"?`<button class="link" onclick="setS('${o.id}','cancel')">${t("cxl")}</button>`:""}</div>`}
+function sm(l){const v=l.filter(PAID),c=l.filter(o=>o.s==="cancel"),sum=a=>a.reduce((x,o)=>x+o.tot,0),k=v.filter(o=>o.chk),ts=v.map(o=>o.ts).sort((a,b)=>a-b),hr={};v.forEach(o=>{const h=new Date(o.ts).getHours();hr[h]=(hr[h]||0)+1});const pk=Object.keys(hr).sort((a,b)=>hr[b]-hr[a])[0];return{n:l.length,cups:l.reduce((x,o)=>x+o.qty,0),vn:v.length,cn:c.length,vs:sum(v),cs:sum(c),ks:sum(k),ps:sum(v)-sum(k),f:ts[0],l:ts[ts.length-1],pk:pk==null?"--":pk+":00-"+(+pk+1)+":00"}}
+const tbl=(h,r)=>`<div class="tw"><table><tr>${h.map(x=>`<th>${x}</th>`).join("")}</tr>${r.map(x=>`<tr>${x.map(c=>`<td>${c}</td>`).join("")}</tr>`).join("")}</table></div>`;
+function bd(title,items,v){const tot=v.length||1;return `<div class="bd"><b>${title}</b>${items.map(([lb,fn])=>{const l=v.filter(fn),s=l.reduce((x,o)=>x+o.tot,0);return `<div><span>${lb}</span><span>${l.length} ${t("per")} · $${s} (${pc(l.length,tot)}%)</span></div><i><u style="width:${pc(l.length,tot)}%"></u></i>`}).join("")}</div>`}
+function audit(){
+  const days=[...new Set(ords.map(o=>dk(o.ts)))].sort().reverse(),l=ords.filter(o=>fd==="all"||dk(o.ts)===fd).sort((a,b)=>b.ts-a.ts),v=l.filter(PAID),k=sm(l);
+  let h=`<section><h3>${t("day")}</h3><select onchange="fd=this.value;render()"><option value="all">${t("all")}</option>${days.map(d=>`<option ${d===fd?"selected":""}>${d}</option>`).join("")}</select></section><div class="seg">${["s","c","t"].map(x=>`<button class="${at===x?"on":""}" onclick="at='${x}';render()">${t("a_"+x)}</button>`).join("")}</div>`;
+  let rows,head,name;
+  if(at==="s"){
+    const dr=days.map(d=>{const z=sm(ords.filter(o=>dk(o.ts)===d));return [d,`${z.n} / ${z.cups}`,"$"+z.vs,"$"+z.ks,"$"+z.ps,pc(z.ks,z.vs)+"%",pc(z.cn,z.n)+"%",z.f?hm(z.f)+"-"+hm(z.l):"--"]});
+    h+=`<div class="st"><div><small>${t("k1")}</small><b>${k.n} / ${k.cups}</b><span>${t("k1b")} ${k.vn} · ${t("k1c")} ${k.cn}</span></div><div class="g"><small>${t("k2")}</small><b>$${k.ks}</b><span>${t("k2b")} $${k.vs}</span></div><div class="w"><small>${t("k3")}</small><b>$${k.ps}</b><span>${k.vn-v.filter(o=>o.chk).length} ${t("per")}</span></div><div><small>${t("k4")}</small><b>${pc(k.ks,k.vs)}%</b><span>${t("k4b")} $${k.vn?Math.round(k.vs/k.vn):0}</span></div><div class="r"><small>${t("k5")}</small><b>${pc(k.cn,k.n)}%</b><span>$${k.cs}</span></div><div><small>${t("k6")}</small><b>${k.f?hm(k.f)+"~"+hm(k.l):"--:--"}</b><span>${t("k6b")} ${k.pk}</span></div></div>`;
+    h+=bd(t("bmilk"),[["OM "+t("OMs"),o=>mk(o)==="OM"],["SM "+t("SM"),o=>mk(o)==="SM"],["FM "+t("FM"),o=>mk(o)==="FM"],[t("nomilk"),o=>mk(o)==="-"]],v)+bd(t("bbean"),[["SOE "+t("soe"),o=>o.bean==="soe"],["House "+t("house"),o=>o.bean!=="soe"]],v);
+    head=[t("d_date"),t("d_n"),t("d_vs"),t("d_ks"),t("d_ps"),t("d_kr"),t("d_cr"),t("d_fl")];rows=dr;name="summary";
+  }else if(at==="c"){
+    const m={};v.forEach(o=>{const key=o.phone||o.name||"?",c=m[key]||(m[key]={name:"",phone:o.phone||"",n:0,sp:0,ks:0,last:0});c.n++;c.sp+=o.tot;if(o.chk)c.ks+=o.tot;if(o.ts>c.last){c.last=o.ts;if(o.name)c.name=o.name}});
+    head=[t("c_name"),t("c_ph"),t("c_n"),t("c_sp"),t("c_pc"),t("c_ks"),t("c_last")];rows=Object.values(m).sort((a,b)=>b.sp-a.sp).map(c=>[esc(c.name||"?"),esc(c.phone),c.n,"$"+c.sp,pc(c.sp,k.vs)+"%","$"+c.ks,dk(c.last)+" "+hm(c.last)]);name="customers";
+  }else{
+    const dt={};v.forEach(o=>{dt[dk(o.ts)]=(dt[dk(o.ts)]||0)+o.tot});
+    head=[t("t_no"),t("t_dt"),t("t_c"),t("t_it"),t("t_amt"),t("t_pc"),t("t_st"),t("t_ck")];rows=l.map(o=>[no(o.n),dk(o.ts)+" "+hm(o.ts),esc(o.name||o.phone),esc(desc(o)),"$"+o.tot,PAID(o)?pc(o.tot,dt[dk(o.ts)])+"%":"-",t("st_"+o.s),PAID(o)?`<button class="mini" style="margin:0" onclick="chk('${o.id}',${!!o.chk})">${o.chk?"☑":"☐"}</button>`:""]);name="orders";
+  }
+  window.exp=()=>csv(`brew-${name}-${fd}.csv`,[head.map(x=>x)].concat(rows.map(r=>r.map(c=>String(c).replace(/<[^>]*>/g,"")))));
+  return h+tbl(head,rows)+`<button class="btn dark inline" onclick="exp()">${t("csv")}</button>`;
+}
+function link(){return location.href.split("#")[0]+"#s="+S.code}
+function dl2(){save("brew-qr.svg",qrSvg(link()),"image/svg+xml")}
+function barista(){
+  if(!S.code){
+    const nl=tab==="n";
+    put($("#app"),hero(0,"BREW",t("cfgn"))+`<div class="seg"><button class="${nl?"on":""}" onclick="tab='n';render()">${t("newshop")}</button><button class="${nl?"":"on"}" onclick="tab='l';render()">${t("login")}</button></div>`+(nl?`<section><input id="rn" type="text" placeholder="${t("shopname")}"><input id="rf" type="tel" placeholder="${t("fpsph")}"><input id="rp" type="password" inputmode="numeric" maxlength="6" placeholder="${t("pin")}"><input id="ri" type="text" placeholder="${t("invite")}" autocapitalize="none"></section><button class="btn inline" onclick="reg()">${t("regbtn")}</button>`:`<section><input id="lc" type="text" placeholder="${t("scode")}" autocapitalize="none"><input id="lp" type="password" inputmode="numeric" maxlength="6" placeholder="${t("pin")}"></section><button class="btn inline" onclick="logIn()">${t("loginbtn")}</button>`)+(MODE==="demo"?`<p class="note">${t("demo")}</p>`:""));put($("#bar"),"");return}
+  if(fatal&&shop===undefined)return msg(fatal);if(!shop)return msg(t("loading"));
+  const np=ords.filter(o=>o.s==="paid").length;
+  let h=hero(0,esc(shop.name),shop.open?t("onl"):t("off"))+`<div class="seg">${[["o",t("tab_o")+(np?`<i>${np}</i>`:"")],["a",t("tab_a")],["s",t("tab_s")]].map(x=>`<button class="${(tab===x[0]||(x[0]==="o"&&!"as".includes(tab)))?"on":""}" onclick="tab='${x[0]}';render()">${x[1]}</button>`).join("")}</div>`;
+  if(tab==="a")h+=audit();
+  else if(tab==="s"){const u=link(),s=qrSvg(u);h+=`<section><h3>${t("sh1")}</h3>${s?`<div class="qr">${s}</div>`:""}<p class="url">${esc(u)}</p><button class="btn inline" onclick="copy('${esc(u)}')">${t("copy")}</button>${s?`<button class="btn dark inline" onclick="dl2()">${t("shq")}</button>`:""}</section><section><h3>${t("shcode")}</h3><div class="card"><b style="font-size:22px;letter-spacing:.1em">${esc(S.code)}</b></div></section><button class="link" onclick="logOut()">${t("logout")}</button>`}
+  else{const l=ords.filter(o=>!["done","cancel"].includes(o.s)).sort((a,b)=>a.ts-b.ts);
+    h+=`<button class="btn ${shop.open?"dark":"ok"} inline" onclick="shopUpd({open:${!shop.open}})">${shop.open?t("pausebtn"):t("openbtn")}</button><section><h3>${t("soeh")}</h3><input type="text" value="${esc(shop.soe)}" placeholder="Ethiopia Yirgacheffe" onchange="shopUpd({soe:this.value})"></section><section><h3>${l.length} ${t("orders")}</h3>${l.length?l.map(card).join(""):`<p class="m">${t("noord")}</p>`}</section>`}
+  put($("#app"),h);put($("#bar"),"");
+}
+function render(){
+  const a=document.activeElement;if(a&&(a.tagName==="INPUT"||a.tagName==="SELECT")&&a.type!=="file")return;
+  $("#lg").textContent=lang==="zh"?"EN":"粵";document.documentElement.lang=lang==="zh"?"zh-HK":"en";
+  code?cust():barista();
+}
+window.addEventListener("hashchange",()=>location.reload());
+(async()=>{
+  render();
+  MODE=location.protocol==="file:"?"demo":(await fetch("/api/ping").then(r=>r.ok).catch(()=>false))?"api":"demo";
+  render();
+  if(code){pollC();setInterval(pollC,3000);return}
+  if(S.code)startB();
+})();
+</script>
+</body>
+</html>
