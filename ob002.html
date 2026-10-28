@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>BREW</title>
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700;800&family=Noto+Sans+TC:wght@400;500;700;900&family=Plus+Jakarta+Sans:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F6F2EC; --ink:#1C1917; --card:#FFFFFF; --accent:#FBBF24; --accent2:#10B981;
+  }
+  html,body{height:100%; color-scheme:light;}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:'Plus Jakarta Sans','Noto Sans TC',sans-serif;
+    box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono{font-family:'JetBrains Mono','Noto Sans TC',monospace}
+  .card{background:var(--card); border:2px solid var(--ink); box-shadow:5px 5px 0 var(--ink); border-radius:1.1rem;}
+  .btn{border:2px solid var(--ink); box-shadow:2.5px 2.5px 0 var(--ink); transition:all .12s ease; cursor:pointer; border-radius:.7rem;}
+  .btn:hover{transform:translate(-1px,-1px); box-shadow:3.5px 3.5px 0 var(--ink);}
+  .btn:active{transform:translate(1.5px,1.5px); box-shadow:1px 1px 0 var(--ink);}
+  .btn:disabled{opacity:.4; cursor:not-allowed; box-shadow:none; transform:none;}
+  input,select{ transition:all .12s ease; }
+  input:focus,select:focus{ outline:none; box-shadow:0 0 0 3px rgba(251,191,36,.55); border-color:var(--ink) !important; }
+  .badge-num{width:1.5rem;height:1.5rem;border-radius:.5rem;background:#1C1917;color:#FBBF24;font-family:'JetBrains Mono',monospace;font-size:.72rem;font-weight:800;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .gbtn{border:1.5px solid #D6D3D1; border-radius:.8rem; background:#fff; transition:all .12s ease;}
+  .gbtn:hover{background:#FAFAF9; border-color:#1C1917; transform:translateY(-1px); box-shadow:0 3px 0 rgba(28,25,23,.15);}
+  ::selection{background:var(--accent); color:var(--ink);}
+</style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+<header class="sticky top-0 z-40 bg-[#1E110B] text-stone-100 border-b-2 border-stone-900">
+  <div class="max-w-4xl mx-auto px-3 py-2.5 flex flex-wrap items-center justify-between gap-2">
+    <div class="flex items-center gap-2">
+      <div class="w-8 h-8 rounded-lg bg-amber-400 text-stone-950 border-2 border-white flex items-center justify-center font-black">☕</div>
+      <h1 class="font-black text-lg tracking-wide">BREW</h1>
+    </div>
+    <div class="flex items-center gap-2">
+      <div class="flex items-center bg-stone-800 p-1 rounded-xl border border-stone-600 text-xs font-black">
+        <button type="button" onclick="switchView('cust')" id="tabCust" class="px-3 py-1.5 rounded-lg">📱 落單</button>
+        <button type="button" onclick="switchView('brew')" id="tabBrew" class="px-3 py-1.5 rounded-lg text-stone-300">☕ Brewer <span id="kdsBadge" class="ml-1 px-1.5 rounded bg-stone-700 text-amber-300">0</span></button>
+      </div>
+      <span id="syncLabel" class="hidden sm:flex items-center gap-1 text-[11px] font-bold text-amber-300">
+        <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>連緊雲端…
+      </span>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-4xl mx-auto w-full flex-1 p-3 sm:p-4 space-y-4">
+
+<!-- ============ 客人落單 ============ -->
+<section id="viewCust" class="space-y-4">
+
+  <div class="card p-4 bg-[#FFFBEB]">
+    <div class="flex items-center justify-between mb-3">
+      <div class="flex items-center gap-2">
+        <span class="px-2 py-0.5 rounded-md bg-emerald-700 text-white mono text-[11px] font-black">置頂收數</span>
+        <h2 class="font-black">🇭🇰 轉數快過數資料</h2>
+      </div>
+      <button onclick="resetEverything()" class="btn px-2.5 py-1 rounded-lg bg-amber-300 font-black text-xs">🔄 歸零重整</button>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div class="p-3 rounded-xl bg-white border-2 border-stone-900 space-y-1.5">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] font-bold text-stone-500">過數電話</span>
+          <span class="text-[11px] font-bold text-emerald-600 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>即時對數</span>
+        </div>
+        <div class="flex items-center justify-between">
+          <span id="fpsPhoneDisp" class="text-2xl font-black mono">9123 6789</span>
+          <button onclick="copyFps()" class="btn px-2.5 py-1 rounded-lg bg-amber-300 font-black text-xs">📋 複製</button>
+        </div>
+      </div>
+      <div class="p-3 rounded-xl bg-[#ECFDF5] border-2 border-stone-900">
+        <span class="text-[11px] font-bold text-emerald-800">要過幾多</span>
+        <div class="flex items-center justify-between">
+          <span id="fpsAmtDisp" class="text-xl font-black mono text-emerald-800">HK$0</span>
+          <span class="text-xs font-bold mono">單號 #<span id="custOrderId">00</span></span>
+        </div>
+      </div>
+    </div>
+    <p class="text-[11px] text-stone-600 mt-2">撳「確認落單」之後自己過數，記得備註單號，過咗撳 WhatsApp 嗌沖哥開工就得！</p>
+  </div>
+
+  <div class="card p-4 space-y-3">
+    <div class="flex items-center gap-2">
+      <span class="badge-num">1</span>
+      <h2 class="font-black">揀豆、揀飲品</h2>
+    </div>
+    <div id="beanButtons" class="grid grid-cols-2 gap-2"></div>
+
+    <div class="grid grid-cols-2 gap-2 pt-1">
+      <div>
+        <label class="text-xs font-black block mb-1">飲乜</label>
+        <select id="selDrink" onchange="buildOrder()" class="w-full rounded-lg border-2 border-stone-900 px-2 py-2 text-sm font-bold bg-white text-stone-900"></select>
+      </div>
+      <div>
+        <label class="text-xs font-black block mb-1">幾大杯</label>
+        <select id="selSize" onchange="buildOrder()" class="w-full rounded-lg border-2 border-stone-900 px-2 py-2 text-sm font-bold bg-white text-stone-900">
+          <option value="S">細杯</option>
+          <option value="M" selected>中杯</option>
+          <option value="L">大杯</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-xs font-black block mb-1">奶係乜水</label>
+        <select id="selMilk" onchange="buildOrder()" class="w-full rounded-lg border-2 border-stone-900 px-2 py-2 text-sm font-bold bg-white text-stone-900">
+          <option value="FM">全脂奶</option>
+          <option value="SM">脫脂奶</option>
+          <option value="OM" selected>燕麥奶 (+$4)</option>
+          <option value="-">齋嘢免奶</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-xs font-black block mb-1">幾多杯</label>
+        <select id="selQty" onchange="buildOrder()" class="w-full rounded-lg border-2 border-stone-900 px-2 py-2 text-sm font-bold bg-white text-stone-900">
+          <option value="1" selected>1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-2 pt-1">
+      <div>
+        <label class="text-xs font-black block mb-1">稱呼</label>
+        <input id="custName" type="text" value="陳小姐" oninput="buildOrder()" class="w-full rounded-lg border border-stone-400 px-2 py-1.5 text-xs font-bold bg-white text-stone-900"/>
+      </div>
+      <div>
+        <label class="text-xs font-black block mb-1">WhatsApp</label>
+        <input id="custWa" type="tel" value="9123 4567" oninput="buildOrder()" class="w-full rounded-lg border border-stone-400 px-2 py-1.5 text-xs font-mono font-bold bg-white text-stone-900"/>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-2 pt-1">
+      <span class="badge-num" style="background:#047857">2</span>
+      <h3 class="font-black text-sm">確認張單</h3>
+    </div>
+    <div class="p-3 rounded-xl bg-[#ECFDF5] border-2 border-stone-900 mono text-sm">
+      <div id="custDesc" class="font-bold">（揀啲嘢先）</div>
+      <div class="font-black text-emerald-800 text-base pt-1">埋單：$<span id="custPrice">0</span></div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-2">
+      <button onclick="confirmOrder()" class="btn py-2.5 rounded-xl bg-emerald-500 font-black text-sm">✅ 確認落單</button>
+      <button onclick="cancelActiveOrder()" class="btn py-2.5 rounded-xl bg-rose-200 font-black text-sm">❌ 唔要喇</button>
+    </div>
+    <button onclick="sendWhatsApp()" class="btn w-full py-2.5 rounded-xl bg-[#25D366] font-black text-sm">💬 傳去 WhatsApp 嗌沖哥</button>
+  </div>
+
+  <div class="card p-4 space-y-2">
+    <h3 class="font-black text-sm">📡 我張單去到邊</h3>
+    <div id="custLive" class="space-y-2 text-xs"></div>
+  </div>
+</section>
+
+<!-- ============ 沖哥模式 ============ -->
+<section id="viewBrew" class="hidden space-y-4">
+
+  <!-- 登入閘 -->
+  <div id="brewGate" class="max-w-sm mx-auto card p-5 space-y-4">
+    <h2 id="gateTitle" class="font-black text-lg">沖哥登入</h2>
+
+    <div id="regBox" class="space-y-3">
+      <p class="text-xs text-stone-700">打你自己個電郵同4位密碼。新電郵會自動幫你開新戶口；已經登記過嘅電郵就要打返啱嘅密碼先入到去——每個電郵嘅單同價錢表都係獨立，唔會同第二個人撞埋一齊。</p>
+      <p class="text-[11px] text-amber-700 font-bold">☁️ 已接雲端：唔同裝置登入返同一個電郵都睇到同一set資料。但要第二部機都寫得入（落單/改價），嗰個人要係呢個 Artifact 嘅 Contributor 或以上（分享設定度加佢）。</p>
+
+      <button type="button" onclick="quickGoogleLogin()" class="gbtn w-full py-2.5 px-3 flex items-center justify-center gap-2.5 font-bold text-sm text-stone-900">
+        <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+        </svg>
+        <span>用 Google 快速試玩戶口</span>
+      </button>
+
+      <div class="flex items-center gap-2 py-0.5">
+        <div class="flex-1 h-px bg-stone-300"></div>
+        <span class="text-[11px] font-bold text-stone-500">或自己打電郵</span>
+        <div class="flex-1 h-px bg-stone-300"></div>
+      </div>
+
+      <input id="gateEmailInput" type="email" placeholder="你個電郵" class="w-full rounded-xl border-2 border-stone-900 px-3 py-2 text-sm font-bold bg-white text-stone-900 placeholder-stone-400"/>
+      <input id="gatePinInput" type="password" inputmode="numeric" maxlength="4" placeholder="4位密碼" class="w-full rounded-xl border-2 border-stone-900 px-3 py-2 text-center mono text-xl font-black tracking-[0.5em] bg-white text-stone-900 placeholder-stone-400"/>
+      <div id="gateErr" class="hidden text-xs font-bold text-rose-600"></div>
+      <button id="gateSubmitBtn" onclick="doGateSubmit()" class="btn w-full py-3 rounded-xl bg-amber-400 text-stone-900 font-black">✅ 登入 / 登記呢個電郵</button>
+    </div>
+  </div>
+
+  <!-- 工作枱 -->
+  <div id="brewWork" class="hidden space-y-4">
+    <div class="card p-3 bg-[#1E110B] text-white flex flex-wrap items-center justify-between gap-2">
+      <div class="text-xs">
+        <span class="text-stone-300">已登入：</span><strong id="activeEmail" class="mono text-amber-300"></strong>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="resetEverything()" class="btn px-3 py-1.5 rounded-lg bg-amber-400 text-stone-950 font-black text-xs">🔄 歸零</button>
+        <button onclick="doLogout()" class="btn px-3 py-1.5 rounded-lg bg-rose-600 text-white font-black text-xs">🚪 閃人</button>
+      </div>
+    </div>
+
+    <div class="card p-4 space-y-3">
+      <div class="flex items-center justify-between">
+        <h3 class="font-black">🖥️ 沖嘢板</h3>
+        <div class="flex items-center gap-1 bg-stone-100 p-1 rounded-lg border border-stone-300 text-xs font-bold">
+          <button onclick="setFilter('active')" id="fltActive" class="px-2.5 py-1 rounded">進行緊</button>
+          <button onclick="setFilter('all')" id="fltAll" class="px-2.5 py-1 rounded">全部</button>
+          <button onclick="setFilter('cancel')" id="fltCancel" class="px-2.5 py-1 rounded">取消咗</button>
+        </div>
+      </div>
+      <div id="kdsList" class="space-y-2"></div>
+    </div>
+
+    <!-- 價錢表 -->
+    <div class="card p-4 space-y-3">
+      <h3 class="font-black">📋 價錢表（隨時改得㗎）</h3>
+      <div id="priceList" class="space-y-1.5 text-xs"></div>
+
+      <details class="pt-2 border-t border-stone-200">
+        <summary class="cursor-pointer text-xs font-black text-amber-800">▾ 加新嘢賣</summary>
+        <div class="mt-2 grid grid-cols-2 gap-2">
+          <input id="newProdName" placeholder="名（例如：熱 Mocha）" class="col-span-2 rounded-lg border-2 border-stone-900 px-2 py-1.5 text-xs font-bold bg-white text-stone-900"/>
+          <select id="newProdType" class="rounded-lg border-2 border-stone-900 px-2 py-1.5 text-xs font-bold bg-white text-stone-900">
+            <option value="black">黑咖啡（免奶）</option>
+            <option value="milk" selected>有奶類</option>
+          </select>
+          <input id="newProdPrice" type="number" placeholder="底價 (中杯)" class="rounded-lg border-2 border-stone-900 px-2 py-1.5 text-xs font-bold bg-white text-stone-900"/>
+          <button onclick="addProduct()" class="col-span-2 btn py-2 rounded-lg bg-emerald-500 font-black text-xs">➕ 加落個表度</button>
+        </div>
+      </details>
+
+      <details class="pt-2 border-t border-stone-200">
+        <summary class="cursor-pointer text-xs font-black text-amber-800">▾ 加新豆種</summary>
+        <div class="mt-2 flex gap-2">
+          <input id="newBeanName" placeholder="例如：藝伎豆 Geisha" class="flex-1 rounded-lg border-2 border-stone-900 px-2 py-1.5 text-xs font-bold bg-white text-stone-900"/>
+          <button onclick="addBean()" class="btn px-3 py-1.5 rounded-lg bg-amber-300 font-black text-xs">➕ 加</button>
+        </div>
+      </details>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<div id="toast" class="fixed bottom-4 right-4 z-50 hidden bg-stone-900 text-white border-2 border-amber-400 px-4 py-2.5 rounded-xl shadow-lg text-xs font-bold"></div>
+
+<script>
+// ---------- 基本資料 ----------
+const LS = {
+  accounts:'brew_accounts_v1',     // [{email,pin}] 本機快取：所有登記過嘅電郵戶口
+  shopEmail:'brew_shop_email_v1',  // 而家個頁面用緊邊個戶口嘅資料
+  sessionEmail:'brew_session_email_v1' // 而家 Brewer 真係登入緊邊個（登出就清空）
+};
+const DEFAULT_BEANS = ['自家豆','SOE 單一產地豆'];
+const DEFAULT_MENU = [
+  {id:'h-amer', name:'熱美式', type:'black', price:28},
+  {id:'h-latte', name:'熱 Latte', type:'milk', price:36},
+  {id:'h-capp', name:'熱 Cappuccino', type:'milk', price:36},
+  {id:'c-amer', name:'凍美式', type:'black', price:32},
+  {id:'c-latte', name:'凍 Latte', type:'milk', price:40},
+  {id:'dirty', name:'Dirty', type:'milk', price:40}
+];
+const chan = (typeof BroadcastChannel!=='undefined') ? new BroadcastChannel('brew_sync_v1') : null;
+
+function load(key, fallback){
+  try{ const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; }catch(e){ return fallback; }
+}
+function save(key, val){ try{ localStorage.setItem(key, JSON.stringify(val)); }catch(e){} }
+
+// 每個電郵戶口嘅資料獨立一set key，唔會同第二個戶口撞埋
+function shopEmail(){ return localStorage.getItem(LS.shopEmail) || '_default'; }
+function keyFor(base, email){ return base + '::' + (email || shopEmail()); }
+
+let beans, menu, orders, seq;
+let selectedBean, filter = 'active';
+let order = { price:0, desc:'（揀啲嘢先）' };
+
+// ---------- 雲端資料庫（可以跨裝置） ----------
+let cloudDb = null;          // claude.use('db') 嘅結果，null = 冇雲端，淨係本機
+let cloudUser = null;
+let currentShopRef = null;   // 而家戶口喺雲端嘅 doc ref
+let shopUnsub = null, ordersUnsub = null;
+
+function setSyncLabel(mode){
+  const el = document.getElementById('syncLabel');
+  if(!el) return;
+  if(mode==='cloud'){
+    el.className='hidden sm:flex items-center gap-1 text-[11px] font-bold text-emerald-300';
+    el.innerHTML='<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>雲端同步緊（跨機都得）';
+  }else if(mode==='local'){
+    el.className='hidden sm:flex items-center gap-1 text-[11px] font-bold text-stone-400';
+    el.innerHTML='<span class="w-2 h-2 rounded-full bg-stone-500"></span>得呢部機（未連雲端）';
+  }else{
+    el.className='hidden sm:flex items-center gap-1 text-[11px] font-bold text-amber-300';
+    el.innerHTML='<span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>連緊雲端…';
+  }
+}
+
+function stopShopSubs(){
+  if(shopUnsub){ shopUnsub(); shopUnsub=null; }
+  if(ordersUnsub){ ordersUnsub(); ordersUnsub=null; }
+}
+
+// 揸實而家戶口嘅資料：先用本機快取即刻畀人睇，雲端到咗就自動refresh
+function loadShopData(email){
+  stopShopSubs();
+  beans = load(keyFor('brew_beans', email), DEFAULT_BEANS.slice());
+  menu  = load(keyFor('brew_menu', email), JSON.parse(JSON.stringify(DEFAULT_MENU)));
+  orders = load(keyFor('brew_orders', email), []);
+  seq = orders.reduce((m,o)=>Math.max(m, parseInt(o.id,10)||0), 0);
+  selectedBean = beans[0];
+
+  if(!cloudDb){ currentShopRef = null; return; }
+  currentShopRef = cloudDb.doc('shops/'+email);
+
+  shopUnsub = currentShopRef.onSnapshot((snap)=>{
+    const d = snap.data();
+    if(d){
+      if(Array.isArray(d.beans) && d.beans.length) beans = d.beans;
+      if(Array.isArray(d.menu) && d.menu.length) menu = d.menu;
+      if(!beans.includes(selectedBean)) selectedBean = beans[0];
+      save(keyFor('brew_beans', email), beans);
+      save(keyFor('brew_menu', email), menu);
+    }else{
+      // 雲端未有呢間鋪嘅資料，寫返而家啲落去做第一版
+      currentShopRef.set({beans, menu}).catch(()=>{});
+    }
+    renderBeanButtons(); renderDrinkOptions(); renderPriceList(); buildOrder();
+  }, ()=>{ /* 雲端有啲問題，靜雞雞繼續用本機 */ });
+
+  ordersUnsub = currentShopRef.collection('orders').onSnapshot((snap)=>{
+    const list = snap.docs.map(d=>d.data());
+    list.sort((a,b)=>(parseInt(b.id,10)||0)-(parseInt(a.id,10)||0));
+    orders = list;
+    seq = orders.reduce((m,o)=>Math.max(m, parseInt(o.id,10)||0), 0);
+    save(keyFor('brew_orders', email), orders);
+    renderAll();
+  }, ()=>{});
+}
+
+async function initCloud(){
+  try{
+    cloudDb = await claude.use('db');
+    cloudUser = await claude.use('user');
+  }catch(e){ cloudDb = null; }
+  if(cloudDb){
+    setSyncLabel('cloud');
+    loadShopData(shopEmail());   // 接返雲端，監聽而家呢間鋪
+  }else{
+    setSyncLabel('local');
+  }
+}
+
+// ---------- 畫面切換 ----------
+function switchView(v){
+  document.getElementById('viewCust').classList.toggle('hidden', v!=='cust');
+  document.getElementById('viewBrew').classList.toggle('hidden', v!=='brew');
+  document.getElementById('tabCust').className = 'px-3 py-1.5 rounded-lg'+(v==='cust'?' bg-amber-400 text-stone-950':' text-stone-300');
+  document.getElementById('tabBrew').className = 'px-3 py-1.5 rounded-lg'+(v==='brew'?' bg-amber-400 text-stone-950':' text-stone-300');
+  if(v==='brew') renderGate();
+  renderAll();
+}
+
+// ---------- 客人落單 ----------
+function renderBeanButtons(){
+  const wrap = document.getElementById('beanButtons');
+  wrap.innerHTML = beans.map(b => `
+    <button type="button" onclick="pickBean('${b.replace(/'/g,"\\'")}')"
+      class="px-2.5 py-2 rounded-lg border-2 border-stone-900 font-black text-xs ${b===selectedBean?'bg-amber-300':'bg-white hover:bg-stone-100'}">
+      ${b}
+    </button>`).join('');
+}
+function pickBean(b){ selectedBean=b; renderBeanButtons(); buildOrder(); }
+
+function renderDrinkOptions(){
+  const sel = document.getElementById('selDrink');
+  const keep = sel.value;
+  sel.innerHTML = menu.map(m=>`<option value="${m.id}">${m.name} ($${m.price}起)</option>`).join('');
+  if(menu.some(m=>m.id===keep)) sel.value = keep;
+}
+
+function buildOrder(){
+  const code = document.getElementById('selDrink').value;
+  const item = menu.find(m=>m.id===code) || menu[0];
+  if(!item){ return; }
+  const size = document.getElementById('selSize').value;
+  const milkSel = document.getElementById('selMilk');
+  let milk = milkSel.value;
+  if(item.type==='black'){ milk='-'; milkSel.value='-'; milkSel.disabled=true; }
+  else{ milkSel.disabled=false; if(milk==='-') { milk='FM'; milkSel.value='FM'; } }
+  const qty = parseInt(document.getElementById('selQty').value,10)||1;
+
+  const sizeAdd = size==='S'?-4:size==='L'?4:0;
+  const milkAdd = (item.type==='milk' && milk==='OM') ? 4 : 0;
+  const unit = Math.max(0, item.price + sizeAdd + milkAdd);
+  const total = unit*qty;
+  const sizeTxt = {S:'細杯',M:'中杯',L:'大杯'}[size];
+  const milkTxt = item.type==='black' ? '' : (milk==='OM'?'／燕麥奶':milk==='SM'?'／脫脂奶':'／全脂奶');
+  const desc = `${selectedBean} ／ ${sizeTxt}${item.name}${milkTxt} ／ ${qty}杯`;
+
+  order = {
+    itemId: item.id, itemName:item.name, bean:selectedBean, size, milk, qty, price:total,
+    desc, custName: document.getElementById('custName').value.trim()||'客人',
+    custWa: document.getElementById('custWa').value.trim()
+  };
+  document.getElementById('custDesc').textContent = desc;
+  document.getElementById('custPrice').textContent = total;
+  const idStr = String(seq+1).padStart(2,'0');
+  document.getElementById('custOrderId').textContent = idStr;
+  document.getElementById('fpsAmtDisp').textContent = 'HK$'+total;
+}
+
+function confirmOrder(){
+  if(!order.itemId) buildOrder();
+  if(!order.itemId) return;
+  seq += 1;
+  const id = String(seq).padStart(2,'0');
+  const now = new Date();
+  const newOrder = {
+    id, desc: order.desc, amount: order.price, custName: order.custName, custWa: order.custWa,
+    status:'待過數', paid:false, time: now.toTimeString().slice(0,5), date: now.toISOString().slice(0,10)
+  };
+  orders.unshift(newOrder);
+  persistOrder(newOrder);
+  showToast(`✅ 單 #${id} 已發！自己過數記得備註`);
+  renderAll();
+}
+
+function cancelActiveOrder(){
+  const t = orders.find(o=>o.status!=='已取消' && o.status!=='搞掂');
+  if(!t){ showToast('而家無單進行緊喎'); return; }
+  t.status='已取消';
+  persistOrder(t);
+  showToast(`❌ 單 #${t.id} 取消咗`);
+  renderAll();
+}
+
+function sendWhatsApp(){
+  const text = `🧾 BREW 落單\n${order.desc}\n稱呼：${order.custName}\n金額：$${order.price}\n過咗數㗎喇，開工啦！`;
+  window.open('https://wa.me/?text='+encodeURIComponent(text), '_blank');
+}
+
+function copyFps(){
+  navigator.clipboard.writeText('91236789').then(()=>showToast('📋 複製咗電話喇'));
+}
+
+// ---------- 沖哥：登入（每個電郵獨立戶口，互相睇唔到） ----------
+async function getAccountsAsync(){
+  if(cloudDb){
+    try{
+      const snap = await cloudDb.doc('config/accounts').get();
+      const list = (snap.exists && Array.isArray(snap.data().list)) ? snap.data().list : [];
+      save(LS.accounts, list);
+      return list;
+    }catch(e){ /* 雲端叫唔應，用返本機快取 */ }
+  }
+  return load(LS.accounts, []);
+}
+
+async function saveAccountsAsync(list){
+  save(LS.accounts, list);
+  if(cloudDb){
+    try{ await cloudDb.doc('config/accounts').set({list}); }
+    catch(e){ showToast('⚠️ 雲端未存到個戶口，遲啲再試下'); }
+  }
+}
+
+function renderGate(){
+  const sessionEmail = localStorage.getItem(LS.sessionEmail) || '';
+  const gate = document.getElementById('brewGate');
+  const work = document.getElementById('brewWork');
+
+  if(sessionEmail){
+    gate.classList.add('hidden'); work.classList.remove('hidden');
+    document.getElementById('activeEmail').textContent = sessionEmail;
+    renderBeanButtons(); renderDrinkOptions(); renderPriceList(); renderKDS();
+    return;
+  }
+  gate.classList.remove('hidden'); work.classList.add('hidden');
+  document.getElementById('gateTitle').textContent = 'Brewer 登入';
+  const emailInput = document.getElementById('gateEmailInput');
+  const lastShop = localStorage.getItem(LS.shopEmail);
+  if(lastShop && lastShop !== '_default' && !emailInput.value) emailInput.value = lastShop;
+  document.getElementById('gatePinInput').value='';
+  document.getElementById('gateErr').classList.add('hidden');
+}
+
+function switchToAccount(email){
+  localStorage.setItem(LS.shopEmail, email);
+  localStorage.setItem(LS.sessionEmail, email);
+  loadShopData(email);
+  renderGate();
+  renderAll();
+}
+
+async function doGateSubmit(){
+  const email = document.getElementById('gateEmailInput').value.trim().toLowerCase();
+  const pin = document.getElementById('gatePinInput').value.trim();
+  const err = document.getElementById('gateErr');
+  const btn = document.getElementById('gateSubmitBtn');
+
+  if(!email || !email.includes('@')){ err.textContent='⚠️ 電郵唔啱喎'; err.classList.remove('hidden'); return; }
+  if(!/^\d{4}$/.test(pin)){ err.textContent='⚠️ 密碼要4位數字'; err.classList.remove('hidden'); return; }
+
+  if(btn){ btn.disabled = true; btn.textContent='⏳ 檢查緊…'; }
+  const accounts = await getAccountsAsync();
+  if(btn){ btn.disabled = false; btn.textContent='✅ 登入 / 登記呢個電郵'; }
+
+  const existing = accounts.find(a=>a.email===email);
+
+  if(existing){
+    if(existing.pin !== pin){
+      err.textContent='❌ 密碼唔啱喎，呢個電郵已經登記咗，再試多次'; err.classList.remove('hidden');
+      return;
+    }
+    err.classList.add('hidden');
+    switchToAccount(email);
+    showToast(`🔓 歡迎返嚟，${email}`);
+  }else{
+    accounts.push({email, pin});
+    await saveAccountsAsync(accounts);
+    err.classList.add('hidden');
+    switchToAccount(email);
+    showToast(`✅ 已幫你開咗新戶口：${email}`);
+  }
+}
+
+function quickGoogleLogin(){
+  document.getElementById('gateEmailInput').value = '4lome.hk@gmail.com';
+  document.getElementById('gatePinInput').value = '0326';
+  doGateSubmit();
+}
+
+function doLogout(){
+  localStorage.removeItem(LS.sessionEmail);
+  showToast('🚪 已閃人，下次要打返個電郵同密碼');
+  renderGate();
+}
+
+// ---------- 沖哥：KDS ----------
+function setFilter(f){
+  filter = f;
+  ['active','all','cancel'].forEach(k=>{
+    document.getElementById('flt'+k.charAt(0).toUpperCase()+k.slice(1)).className =
+      'px-2.5 py-1 rounded'+(k===f?' bg-stone-900 text-white':' text-stone-600');
+  });
+  renderKDS();
+}
+
+function persistOrder(ord){
+  save(keyFor('brew_orders'), orders);
+  if(chan) chan.postMessage({type:'orders', email:shopEmail(), orders});
+  if(currentShopRef){
+    currentShopRef.collection('orders').doc(ord.id).set(ord).catch(()=>{
+      showToast('⚠️ 雲端未存到呢張單，遲啲再撳多次');
+    });
+  }
+}
+
+function renderKDS(){
+  const list = document.getElementById('kdsList');
+  if(!list) return;
+  const data = orders.filter(o=>{
+    if(filter==='active') return o.status!=='已取消' && o.status!=='搞掂';
+    if(filter==='cancel') return o.status==='已取消';
+    return true;
+  });
+  document.getElementById('kdsBadge').textContent = orders.filter(o=>o.status!=='已取消'&&o.status!=='搞掂').length;
+
+  if(data.length===0){
+    list.innerHTML = `<div class="p-5 rounded-xl border border-dashed border-stone-300 text-center text-xs text-stone-500 font-bold">暫時冇單喎</div>`;
+    return;
+  }
+  list.innerHTML = data.map(o=>{
+    const cancelled = o.status==='已取消', done=o.status==='搞掂', brewing=o.status==='沖緊';
+    let bg = 'bg-white';
+    if(cancelled) bg='bg-rose-50 opacity-75';
+    else if(brewing) bg='bg-amber-50';
+    else if(done) bg='bg-emerald-50';
+    return `
+      <div class="p-3 rounded-xl border-2 border-stone-900 ${bg} space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="font-black mono">#${o.id} <span class="text-xs font-bold text-stone-500">${o.time||''}</span></span>
+          <span class="font-black text-emerald-700">$${o.amount}</span>
+        </div>
+        <div class="text-sm font-bold">${o.desc}</div>
+        <div class="text-[11px] text-stone-500">${o.custName||''} ${o.custWa?'· '+o.custWa:''} · 狀態：${o.status}</div>
+        <div class="flex flex-wrap gap-1.5">
+          ${!cancelled && o.status==='待過數' ? `<button onclick="advance('${o.id}','沖緊')" class="btn px-2.5 py-1 rounded-lg bg-emerald-500 font-black text-xs">⚡ 收咗數開沖</button>`:''}
+          ${!cancelled && brewing ? `<button onclick="advance('${o.id}','搞掂')" class="btn px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-black text-xs">🟢 搞掂可攞</button>`:''}
+          ${!cancelled ? `<button onclick="advance('${o.id}','已取消')" class="btn px-2.5 py-1 rounded-lg bg-rose-200 font-black text-xs">❌ 取消</button>`
+                        : `<button onclick="advance('${o.id}','待過數')" class="btn px-2.5 py-1 rounded-lg bg-stone-200 font-black text-xs">↺ 返轉頭</button>`}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function advance(id, status){
+  const o = orders.find(x=>x.id===id);
+  if(!o) return;
+  o.status = status;
+  persistOrder(o);
+  renderAll();
+  showToast(`單 #${id} → ${status}`);
+}
+
+// ---------- 沖哥：價錢表 ----------
+function renderPriceList(){
+  const el = document.getElementById('priceList');
+  if(!el) return;
+  el.innerHTML = menu.map(m=>`
+    <div class="flex items-center gap-2 p-2 rounded-lg bg-stone-50 border border-stone-300">
+      <span class="flex-1 font-bold">${m.name} <span class="text-[10px] text-stone-400">${m.type==='black'?'(黑咖啡)':'(有奶)'}</span></span>
+      <span class="mono text-stone-500">$</span>
+      <input type="number" value="${m.price}" onchange="editPrice('${m.id}', this.value)" class="w-16 rounded border border-stone-400 px-1.5 py-1 text-xs font-bold mono"/>
+      <button onclick="deleteProduct('${m.id}')" class="px-2 py-1 rounded bg-rose-100 text-rose-800 font-bold text-[11px]">刪</button>
+    </div>`).join('');
+}
+
+function persistShopMeta(){
+  save(keyFor('brew_menu'), menu);
+  save(keyFor('brew_beans'), beans);
+  if(currentShopRef){
+    currentShopRef.update({menu, beans}).catch(()=>{
+      currentShopRef.set({menu, beans}).catch(()=>{
+        showToast('⚠️ 雲端未存到呢個改動');
+      });
+    });
+  }
+}
+
+function editPrice(id, val){
+  const m = menu.find(x=>x.id===id);
+  if(!m) return;
+  m.price = Math.max(0, parseInt(val,10)||0);
+  persistShopMeta();
+  renderDrinkOptions();
+  showToast('💾 改好個價錢喇');
+}
+
+function deleteProduct(id){
+  if(menu.length<=1){ showToast('⚠️ 最少要留一樣嘢賣'); return; }
+  menu = menu.filter(m=>m.id!==id);
+  persistShopMeta();
+  renderPriceList(); renderDrinkOptions();
+  showToast('🗑️ 刪咗喇');
+}
+
+function addProduct(){
+  const name = document.getElementById('newProdName').value.trim();
+  const type = document.getElementById('newProdType').value;
+  const price = parseInt(document.getElementById('newProdPrice').value,10);
+  if(!name || isNaN(price)){ showToast('⚠️ 名同底價都要填'); return; }
+  const id = 'c'+Date.now();
+  menu.push({id, name, type, price});
+  persistShopMeta();
+  document.getElementById('newProdName').value='';
+  document.getElementById('newProdPrice').value='';
+  renderPriceList(); renderDrinkOptions();
+  showToast(`✅ 加咗「${name}」入價錢表`);
+}
+
+function addBean(){
+  const name = document.getElementById('newBeanName').value.trim();
+  if(!name){ showToast('⚠️ 打個豆名先'); return; }
+  if(beans.includes(name)){ showToast('⚠️ 呢隻豆已經有喇'); return; }
+  beans.push(name);
+  persistShopMeta();
+  document.getElementById('newBeanName').value='';
+  renderBeanButtons();
+  showToast(`✅ 加咗新豆種「${name}」`);
+}
+
+// ---------- 客人：進度追蹤 ----------
+function renderCustLive(){
+  const el = document.getElementById('custLive');
+  if(!el) return;
+  const recent = orders.slice(0,3);
+  if(recent.length===0){ el.innerHTML = `<div class="text-stone-400">未落過單</div>`; return; }
+  el.innerHTML = recent.map(o=>`
+    <div class="p-2.5 rounded-lg border border-stone-300 flex items-center justify-between">
+      <span class="font-bold">#${o.id} · ${o.desc} <span class="mono">($${o.amount})</span></span>
+      <span class="font-black text-[11px]">${o.status}</span>
+    </div>`).join('');
+}
+
+// ---------- 其他 ----------
+async function resetEverything(){
+  const refAtReset = currentShopRef;
+  orders = []; seq = 0;
+  localStorage.removeItem(keyFor('brew_orders'));
+  const custDesc = document.getElementById('custDesc'); if(custDesc) custDesc.textContent='（已歸零，揀返啲嘢）';
+  const custPrice = document.getElementById('custPrice'); if(custPrice) custPrice.textContent='0';
+  const fpsAmt = document.getElementById('fpsAmtDisp'); if(fpsAmt) fpsAmt.textContent='HK$0';
+  const custId = document.getElementById('custOrderId'); if(custId) custId.textContent='00';
+  if(chan) chan.postMessage({type:'orders', email:shopEmail(), orders});
+  renderAll();
+  showToast('🔄 歸零重整完畢');
+
+  if(refAtReset){
+    try{
+      const snap = await refAtReset.collection('orders').get();
+      for(const d of snap.docs){ await refAtReset.collection('orders').doc(d.id).delete(); }
+    }catch(e){ /* 本機已經清咗，雲端遲啲再試 */ }
+  }
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.remove('hidden');
+  clearTimeout(window.__tt);
+  window.__tt = setTimeout(()=>t.classList.add('hidden'), 2400);
+}
+
+function renderAll(){
+  renderCustLive();
+  renderKDS();
+}
+
+if(chan){
+  chan.onmessage = (e)=>{
+    // 淨係同自己而家個戶口（email）一樣先至同步，唔會撞到第二個戶口嘅單
+    if(e.data && e.data.type==='orders' && e.data.email===shopEmail() && Array.isArray(e.data.orders)){
+      orders = e.data.orders;
+      seq = orders.reduce((m,o)=>Math.max(m, parseInt(o.id,10)||0), 0);
+      renderAll();
+    }
+  };
+}
+window.addEventListener('storage', (e)=>{
+  if(e.key===keyFor('brew_orders') && e.newValue){
+    try{ orders = JSON.parse(e.newValue); renderAll(); }catch(err){}
+  }
+});
+
+// ---------- Init ----------
+window.addEventListener('DOMContentLoaded', ()=>{
+  loadShopData(shopEmail());
+  renderBeanButtons();
+  renderDrinkOptions();
+  buildOrder();
+  switchView('cust');
+  setFilter('active');
+  renderAll();
+  setSyncLabel('connecting');
+  initCloud();
+});
+</script>
+</body>
+</html>
