@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+  <title>BREW 咖啡落單與咖啡師工作台</title>
+  <meta name="description" content="BREW 香港市井廣東話極簡咖啡落單與咖啡師工作台系統：自家豆/SOE揀豆、轉數快FPS即時對數、價目表動態加SOE、7大觸控大按鍵與雙軌權限。" />
+
+  <!-- Web App & PWA Meta Tags -->
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+  <link rel="apple-touch-icon" href="/icon.svg" />
+  <meta name="theme-color" content="#2D2B28" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700;800&family=Noto+Sans+TC:wght@400;500;700;900&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      background-color: #FBF9F5;
+      color: #1F1E1B;
+      font-family: 'Plus Jakarta Sans', 'Noto Sans TC', sans-serif;
+    }
+    .tabular-nums {
+      font-variant-numeric: tabular-nums;
+    }
+    .tactile-card {
+      background: #FFFFFF;
+      border: 1.5px solid #2D2B28;
+      box-shadow: 3.5px 3.5px 0px #2D2B28;
+      border-radius: 0.875rem;
+    }
+    .tactile-btn {
+      border: 1.5px solid #2D2B28;
+      box-shadow: 2.5px 2.5px 0px #2D2B28;
+      transition: all 0.12s ease;
+    }
+    .tactile-btn:hover:not(:disabled) {
+      transform: translate(-1px, -1px);
+      box-shadow: 3.5px 3.5px 0px #2D2B28;
+    }
+    .tactile-btn:active:not(:disabled) {
+      transform: translate(1.5px, 1.5px);
+      box-shadow: 1px 1px 0px #2D2B28;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-[#FDE68A] selection:text-[#1F1E1B]">
+
+  <!-- TOP HEADER -->
+  <header class="sticky top-0 z-40 bg-[#2D2B28] text-[#FBF9F5] border-b-2 border-[#1F1E1B]">
+    <div class="max-w-5xl mx-auto px-4 py-2.5 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-xl bg-[#C15F3D] text-white flex items-center justify-center font-black text-lg border-2 border-white/20">
+          ☕
+        </div>
+        <div class="flex items-center gap-2">
+          <h1 class="font-black text-lg sm:text-xl font-mono text-white tracking-wider">BREW</h1>
+          <span class="text-[11px] font-bold text-[#E5E0D8]/80 hidden sm:inline">· 地道落單與咖啡師工作台</span>
+        </div>
+      </div>
+
+      <div class="flex items-center flex-wrap gap-2">
+        <div class="flex items-center bg-[#1F1E1B] p-1 rounded-xl border border-white/10" role="tablist">
+          <button
+            type="button"
+            id="tab-btn-customer"
+            onclick="switchMainView('customer')"
+            class="px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-black transition bg-[#C15F3D] text-white cursor-pointer"
+          >
+            📱 客人 order
+          </button>
+          <button
+            type="button"
+            id="tab-btn-brewer"
+            onclick="switchMainView('brewer')"
+            class="px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-black transition text-[#E5E0D8]/70 hover:text-white flex items-center gap-1.5 cursor-pointer"
+          >
+            <span>☕ 咖啡師 Brewer</span>
+            <span id="brewer-badge-count" class="px-1.5 py-0.2 rounded bg-amber-400 text-stone-950 font-mono text-xs font-black">0</span>
+          </button>
+        </div>
+
+        <button
+          type="button"
+          onclick="manualSync()"
+          class="px-2.5 py-1.5 rounded-lg bg-[#1F1E1B] text-[#E5E0D8] border border-white/10 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+        >
+          <span id="sync-dot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span id="sync-status-label">接單同步中</span>
+        </button>
+
+        <a
+          href="/"
+          class="px-2.5 py-1.5 rounded-lg bg-[#1F1E1B] text-amber-300 border border-white/10 text-xs font-bold"
+        >
+          PWA 主程式 ➔
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-5xl mx-auto w-full flex-1 p-4 sm:p-6 space-y-6">
+
+    <!-- =================================================================== -->
+    <!-- VIEW 1: 客人 order (CUSTOMER ORDER VIEW)                            -->
+    <!-- =================================================================== -->
+    <section id="view-customer" class="space-y-6">
+      {/* 轉數快 FPS 置頂快速付款流程 (Point Form, NO QR CODE) */}
+      <div class="tactile-card p-5 bg-[#FAF8F5] border-2 border-[#2D2B28]">
+        <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-[#E5E0D8]">
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-0.5 rounded-md bg-emerald-700 text-white font-mono text-xs font-black">置頂收款</span>
+            <h2 class="font-black text-base sm:text-lg text-[#1F1E1B]">🇭🇰 轉數快 FPS 快速過數</h2>
+          </div>
+          <div class="flex items-center gap-2 text-xs font-bold text-[#6E6A63]">
+            <span>只收港紙 HKD</span>
+            <span aria-hidden="true">·</span>
+            <span>單號 <strong id="cust-top-order-id" class="font-mono text-stone-900 text-sm">#01</strong></span>
+            <button
+              type="button"
+              onclick="resetToZeroAndReload('customer')"
+              class="tactile-btn py-1.5 px-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-stone-950 font-black text-xs cursor-pointer"
+            >
+              🔄 重設 0 / 重新載入
+            </button>
+          </div>
+        </div>
+
+        <div class="mt-4 grid grid-cols-1 md:grid-cols-12 gap-5 items-start">
+          <div class="md:col-span-5 p-4 rounded-xl bg-white border-2 border-[#2D2B28] space-y-3 shadow-xs">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-[#6E6A63]">轉數快 FPS 電話號碼</span>
+              <span class="text-xs font-bold text-emerald-700">🟢 對數開沖</span>
+            </div>
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div id="cust-fps-phone-display" class="text-2xl sm:text-3xl font-black font-mono text-[#1F1E1B] tabular-nums">
+                9123 6789
+              </div>
+              <button
+                type="button"
+                onclick="copyFpsPhone()"
+                class="tactile-btn px-3 py-1.5 rounded-lg bg-amber-300 hover:bg-amber-400 text-stone-950 font-black text-xs"
+              >
+                📋 複製電話
+              </button>
+            </div>
+            <div class="pt-2 border-t border-[#E5E0D8] flex items-center justify-between">
+              <div>
+                <span class="text-xs font-bold text-[#6E6A63] block">應付港紙 (HKD)</span>
+                <span id="cust-fps-amount-display" class="text-2xl sm:text-3xl font-black font-mono text-emerald-800 tabular-nums">HK$0</span>
+              </div>
+              <button
+                type="button"
+                onclick="copyFpsReceiptPrompt()"
+                class="tactile-btn px-3 py-2 rounded-lg bg-[#2D2B28] text-white font-black text-xs"
+              >
+                複製過數備註
+              </button>
+            </div>
+          </div>
+
+          <!-- Point Form Quick Payment Steps -->
+          <div class="md:col-span-7 p-4 rounded-xl bg-white border-2 border-[#2D2B28] space-y-2.5 shadow-xs">
+            <div class="font-black text-xs sm:text-sm text-[#1F1E1B]">
+              📌 轉數快快速付款流程：
+            </div>
+            <ul class="text-xs text-[#2D2B28] space-y-1.5 font-medium leading-relaxed">
+              <li class="flex items-start gap-1.5">
+                <span class="font-black text-[#C15F3D] shrink-0">1.</span>
+                <span>打開銀行或電子錢包 App，輸入轉數快號碼：<strong class="font-mono text-base underline text-[#1F1E1B]">9123 6789</strong></span>
+              </li>
+              <li class="flex items-start gap-1.5">
+                <span class="font-black text-[#C15F3D] shrink-0">2.</span>
+                <span>金額填寫應付銀碼，備註請填單號：<strong id="point-order-id" class="font-mono text-[#C15F3D] font-black">#01</strong></span>
+              </li>
+              <li class="flex items-start gap-1.5">
+                <span class="font-black text-[#C15F3D] shrink-0">3.</span>
+                <span>完成過數後，截低付款完成圖（截圖）。</span>
+              </li>
+              <li class="flex items-start gap-1.5">
+                <span class="font-black text-[#C15F3D] shrink-0">4.</span>
+                <span>喺下方「貼上付款截圖」區上傳或直接貼上圖片。</span>
+              </li>
+              <li class="flex items-start gap-1.5">
+                <span class="font-black text-[#C15F3D] shrink-0">5.</span>
+                <span>撳「✅ 確認落單」，並點選 WhatsApp 或 IG Message 傳送截圖俾咖啡師即時開沖！</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Ordering Two Columns -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* Left: 1. 揀豆 + 飲品配方 */}
+        <div class="lg:col-span-7 tactile-card p-5 space-y-5 bg-white border-2 border-[#2D2B28]">
+          <div class="flex items-center justify-between border-b border-[#E5E0D8] pb-3">
+            <div class="flex items-center gap-2">
+              <span class="w-6 h-6 rounded-md bg-[#2D2B28] text-amber-300 font-mono text-xs font-black flex items-center justify-center">1</span>
+              <h3 class="font-black text-base sm:text-lg text-[#1F1E1B]">揀豆・揀飲品配方</h3>
+            </div>
+            <span class="text-xs font-bold text-[#6E6A63]">零語音快速落單</span>
+          </div>
+
+          {/* Bean Selection (Exact 2 choices: 自家豆 & SOE 單一產地豆) */}
+          <div class="space-y-2">
+            <label class="text-xs font-black text-[#1F1E1B]">🫘 揀咖啡豆 (2款核心選擇)</label>
+            <div class="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                id="btn-bean-house"
+                onclick="selectBean('自家豆')"
+                class="tactile-btn py-3 px-3 rounded-xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-1 cursor-pointer bg-amber-300 text-stone-950 border-2 border-[#2D2B28]"
+              >
+                <span>☕ 自家豆</span>
+                <span class="text-[11px] font-bold text-stone-600">招牌平衡風味 (+$0)</span>
+              </button>
+
+              <button
+                type="button"
+                id="btn-bean-soe"
+                onclick="selectBean('SOE 單一產地豆')"
+                class="tactile-btn py-3 px-3 rounded-xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-1 cursor-pointer bg-[#FAF8F5] text-stone-700 border border-stone-300"
+              >
+                <span>✨ SOE 單一產地豆</span>
+                <span class="text-[11px] font-bold text-stone-600">產地明亮風味</span>
+              </button>
+            </div>
+
+            {/* SOE Sub-Picker */}
+            <div id="soe-picker-box" class="hidden p-3.5 rounded-xl bg-amber-50/80 border-2 border-[#C15F3D] space-y-2">
+              <div class="flex items-center justify-between text-xs font-black text-[#C15F3D]">
+                <span>🌟 當前 SOE 豆種選擇</span>
+              </div>
+              <div id="soe-options-list" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
+            </div>
+          </div>
+
+          {/* Drink & Size & Milk */}
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+            <div>
+              <label for="sel-drink" class="text-xs font-black text-[#1F1E1B] block mb-1">飲品</label>
+              <select id="sel-drink" onchange="buildFromVisual()" class="w-full rounded-xl border-2 border-[#2D2B28] px-3 py-2.5 text-xs sm:text-sm font-bold bg-white">
+                <optgroup label="🔥 熱飲 (Hot)">
+                  <option value="H01">H01 · 熱美式 Americano ($28起)</option>
+                  <option value="H02" selected>H02 · 熱 Latte ($36起)</option>
+                  <option value="H03">H03 · 熱 Cappuccino ($36起)</option>
+                  <option value="H04">H04 · 熱 Flat White ($36起)</option>
+                  <option value="H05">H05 · 熱 Mocha ($40起)</option>
+                </optgroup>
+                <optgroup label="🧊 凍飲 (Iced)">
+                  <option value="C01">C01 · 凍美式 Americano ($32起)</option>
+                  <option value="C02">C02 · 凍 Latte ($40起)</option>
+                  <option value="C03">C03 · 凍 Cappuccino ($40起)</option>
+                  <option value="C04">C04 · 凍 Mocha ($44起)</option>
+                </optgroup>
+                <optgroup label="✨ 特調 (Special)">
+                  <option value="S01">S01 · Dirty ($40)</option>
+                  <option value="S02">S02 · Espresso Tonic ($42)</option>
+                </optgroup>
+              </select>
+            </div>
+
+            <div>
+              <label for="sel-size" class="text-xs font-black text-[#1F1E1B] block mb-1">杯量</label>
+              <select id="sel-size" onchange="buildFromVisual()" class="w-full rounded-xl border-2 border-[#2D2B28] px-3 py-2.5 text-xs sm:text-sm font-bold bg-white">
+                <option value="S">細杯 (S)</option>
+                <option value="M" selected>中杯 (M)</option>
+                <option value="L">大杯 (L)</option>
+                <option value="D">Dirty 專用杯 (D)</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="sel-milk" class="text-xs font-black text-[#1F1E1B] block mb-1">奶類</label>
+              <select id="sel-milk" onchange="buildFromVisual()" class="w-full rounded-xl border-2 border-[#2D2B28] px-3 py-2.5 text-xs sm:text-sm font-bold bg-white">
+                <option value="FM">FM · 全脂奶 (+$0)</option>
+                <option value="SM">SM · 脫脂奶 (+$0)</option>
+                <option value="OM" selected>OM · 燕麥奶 (+$4)</option>
+                <option value="-">齋啡免奶 (-)</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="sel-qty" class="text-xs font-black text-[#1F1E1B] block mb-1">數量</label>
+              <select id="sel-qty" onchange="buildFromVisual()" class="w-full rounded-xl border-2 border-[#2D2B28] px-3 py-2.5 text-xs sm:text-sm font-bold bg-white">
+                <option value="1">1 杯</option>
+                <option value="2">2 杯</option>
+                <option value="3">3 杯</option>
+                <option value="4">4 杯</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Natural Text Input (Empty value with light placeholder) */}
+          <div class="space-y-1.5 pt-1">
+            <label for="order-input" class="text-xs font-black text-[#1F1E1B] block">落單備註／自訂字句</label>
+            <input
+              id="order-input"
+              type="text"
+              value=""
+              placeholder="例如 (for example)：中杯熱 Latte 燕麥奶 1杯 少冰"
+              oninput="parseOrderInput(true)"
+              class="w-full rounded-xl border-2 border-[#2D2B28] px-3.5 py-2.5 font-mono text-sm font-bold bg-[#FAF8F5] placeholder:text-stone-400 placeholder:font-normal"
+            />
+          </div>
+
+          {/* Customer Contact (Empty values with light placeholders) */}
+          <div class="p-3.5 rounded-xl bg-[#FAF8F5] border border-stone-300 space-y-2">
+            <div class="text-xs font-black text-[#1F1E1B]">👤 客人聯絡資料（WhatsApp / IG 叫號出啡）</div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <div>
+                <label class="text-[11px] font-bold text-stone-600 block mb-0.5">稱呼</label>
+                <input
+                  id="cust-name-input"
+                  type="text"
+                  value=""
+                  placeholder="例如 (for example)：陳小姐"
+                  oninput="parseOrderInput()"
+                  class="w-full rounded-lg border border-stone-400 px-2.5 py-1.5 text-xs font-bold bg-white placeholder:text-stone-400 placeholder:font-normal"
+                />
+              </div>
+              <div>
+                <label class="text-[11px] font-bold text-stone-600 block mb-0.5">WhatsApp</label>
+                <input
+                  id="cust-whatsapp-input"
+                  type="tel"
+                  value=""
+                  placeholder="例如 (for example)：9123 4567"
+                  oninput="parseOrderInput()"
+                  class="w-full rounded-lg border border-stone-400 px-2.5 py-1.5 text-xs font-mono font-bold bg-white placeholder:text-stone-400 placeholder:font-normal"
+                />
+              </div>
+              <div>
+                <label class="text-[11px] font-bold text-stone-600 block mb-0.5">IG Message</label>
+                <input
+                  id="cust-ig-input"
+                  type="text"
+                  value=""
+                  placeholder="例如 (for example)：@chan_hk"
+                  oninput="parseOrderInput()"
+                  class="w-full rounded-lg border border-stone-400 px-2.5 py-1.5 text-xs font-mono font-bold bg-white placeholder:text-stone-400 placeholder:font-normal"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right: 貼上付款截圖 + 確認張單 */}
+        <div class="lg:col-span-5 space-y-5">
+          {/* Screenshot Upload / Paste Box */}
+          <div class="tactile-card p-4 bg-white border-2 border-[#2D2B28] space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="font-black text-xs sm:text-sm text-[#1F1E1B]">📸 貼上付款截圖（轉數快成功過數記錄）</span>
+              <span class="text-[11px] text-stone-500 font-mono">支援 Ctrl+V 貼上</span>
+            </div>
+            <div id="screenshot-dropzone" class="border-2 border-dashed border-stone-300 rounded-xl p-4 text-center bg-[#FAF8F5] cursor-pointer hover:bg-stone-50">
+              <label class="cursor-pointer block">
+                <span class="text-xs font-bold text-stone-700 block">點擊上傳付款截圖，或直接按 Ctrl+V 貼上</span>
+                <span class="text-[10px] text-stone-400 font-mono">JPG / PNG / WEBP</span>
+                <input type="file" id="screenshot-file-input" accept="image/*" class="hidden" onchange="handleScreenshotFile(this)" />
+              </label>
+              <div id="screenshot-preview-wrap" class="hidden mt-2 relative">
+                <img id="screenshot-preview-img" src="" alt="Screenshot" class="max-h-36 mx-auto rounded-lg object-contain shadow-xs" />
+                <button type="button" onclick="clearScreenshot()" class="mt-1 text-[11px] text-rose-600 font-bold hover:underline">移除截圖 ✕</button>
+              </div>
+            </div>
+          </div>
+
+          {/* Confirm Card */}
+          <div class="tactile-card p-5 bg-[#FAF8F5] border-2 border-[#2D2B28] space-y-4">
+            <div class="flex items-center justify-between border-b border-[#E5E0D8] pb-3">
+              <div class="flex items-center gap-2">
+                <span class="w-6 h-6 rounded-md bg-emerald-700 text-white font-mono text-xs font-black flex items-center justify-center">2</span>
+                <h3 class="font-black text-base sm:text-lg text-[#1F1E1B]">確認張單</h3>
+              </div>
+              <span class="text-xs font-black text-emerald-800">即沖即出</span>
+            </div>
+
+            <div class="p-4 rounded-xl bg-white border-2 border-[#2D2B28] font-mono text-xs sm:text-sm space-y-2 leading-relaxed shadow-xs">
+              <div class="font-black text-[#1F1E1B]" id="customer-order-desc">自家拼配豆 · 中杯 熱 Latte / 燕麥奶 · 1 杯</div>
+              <div class="text-xs text-[#6E6A63]" id="customer-contact-preview">聯絡：客人</div>
+              <div class="pt-2 border-t border-[#E5E0D8] flex items-baseline justify-between">
+                <span class="text-xs font-bold text-[#6E6A63]">應付總額 (HKD)</span>
+                <span class="text-2xl font-black font-mono text-emerald-800" id="customer-order-price">HK$44</span>
+              </div>
+            </div>
+
+            <div id="feedback-banner" class="hidden p-2.5 rounded-lg bg-emerald-100 border border-emerald-400 text-emerald-950 font-bold text-xs"></div>
+
+            {/* Actions: 確認 / 修改 / 取消 / 重設 0 */}
+            <div class="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onclick="customerConfirmOrder()"
+                class="tactile-btn py-3 px-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-stone-950 font-black text-xs sm:text-sm cursor-pointer"
+              >
+                ✅ 確認落單
+              </button>
+              <button
+                type="button"
+                onclick="customerModifyOrder()"
+                class="tactile-btn py-3 px-3 rounded-xl bg-amber-300 hover:bg-amber-400 text-stone-950 font-black text-xs sm:text-sm cursor-pointer"
+              >
+                ✏️ 修改
+              </button>
+              <button
+                type="button"
+                onclick="customerCancelActiveOrder()"
+                class="tactile-btn py-3 px-3 rounded-xl bg-rose-200 hover:bg-rose-300 text-rose-950 font-black text-xs sm:text-sm cursor-pointer"
+              >
+                ❌ 取消張單
+              </button>
+              <button
+                type="button"
+                onclick="resetToZeroAndReload('customer')"
+                class="tactile-btn py-3 px-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-stone-950 font-black text-xs sm:text-sm cursor-pointer"
+              >
+                🔄 重設 0 / 重新載入
+              </button>
+            </div>
+
+            {/* Send WhatsApp or IG Message */}
+            <div class="flex gap-2 pt-1">
+              <button
+                type="button"
+                onclick="openWhatsAppOrder()"
+                class="flex-1 py-2.5 px-3 rounded-xl bg-[#25D366] text-stone-950 font-black text-xs border border-stone-900 cursor-pointer"
+              >
+                💬 WhatsApp 傳送截圖
+              </button>
+              <button
+                type="button"
+                onclick="openIgOrder()"
+                class="flex-1 py-2.5 px-3 rounded-xl bg-[#E1306C] text-white font-black text-xs border border-stone-900 cursor-pointer"
+              >
+                💬 IG Message 傳送
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- VIEW 2: 咖啡師 Brewer                                               -->
+    <!-- =================================================================== -->
+    <section id="view-brewer" class="hidden space-y-6">
+      {/* Brewer Gate */}
+      <div id="brewer-auth-gate" class="max-w-md mx-auto tactile-card p-6 bg-white border-2 border-[#2D2B28] space-y-5">
+        <div class="flex items-center justify-between border-b border-[#E5E0D8] pb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-xl">🔐</span>
+            <h3 class="font-black text-lg text-[#1F1E1B]">咖啡師 Brewer 進入閘道</h3>
+          </div>
+          <span class="px-2 py-0.5 rounded bg-stone-100 border border-stone-800 text-xs font-mono font-bold">KDS</span>
+        </div>
+
+        <div class="space-y-3">
+          <button
+            type="button"
+            onclick="quickLoginWithEmail('barista.google@gmail.com')"
+            class="tactile-btn w-full py-2.5 px-3 rounded-xl border-2 border-[#2D2B28] bg-white text-stone-900 font-bold text-xs flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <span>以 Google 帳號登記進入 (Continue with Google)</span>
+          </button>
+        </div>
+
+        <div class="relative flex py-1 items-center">
+          <div class="grow border-t border-stone-200"></div>
+          <span class="shrink-0 mx-2 text-[11px] font-bold text-stone-400">或以電郵及 Passkey 登入</span>
+          <div class="grow border-t border-stone-200"></div>
+        </div>
+
+        <form onsubmit="handleBrewerLogin(event)" class="space-y-3.5">
+          <div>
+            <label class="text-xs font-black text-stone-800 block mb-1">咖啡師電郵 (Email)</label>
+            <input
+              id="brewer-email-input"
+              type="email"
+              value=""
+              placeholder="例如 (for example)：barista@brew.hk"
+              class="w-full rounded-xl border-2 border-[#2D2B28] px-3.5 py-2 text-xs sm:text-sm font-bold bg-[#FAF8F5] placeholder:text-stone-400 placeholder:font-normal"
+            />
+          </div>
+          <div>
+            <label class="text-xs font-black text-stone-800 block mb-1">Passkey</label>
+            <input
+              id="brewer-passkey-input"
+              type="password"
+              maxlength="6"
+              value=""
+              placeholder="例如 (for example)：••••"
+              class="w-full rounded-xl border-2 border-[#2D2B28] px-3.5 py-2.5 text-center font-mono text-lg font-black tracking-widest bg-white placeholder:text-stone-400 placeholder:font-normal"
+            />
+          </div>
+          <button
+            type="submit"
+            class="tactile-btn w-full py-3 rounded-xl bg-[#C15F3D] text-white font-black text-xs sm:text-sm cursor-pointer"
+          >
+            進入咖啡師工作台
+          </button>
+        </form>
+      </div>
+
+      {/* Brewer Unlocked Workspace */}
+      <div id="brewer-workspace" class="hidden space-y-6">
+        <div class="tactile-card p-4 bg-[#2D2B28] text-white flex flex-wrap items-center justify-between gap-3 border-2 border-[#1F1E1B]">
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-1 rounded-lg bg-[#C15F3D] text-white font-black text-xs">☕ 咖啡師 Brewer</span>
+            <span class="text-xs text-[#E5E0D8]/80">連線中：<strong id="active-brewer-email" class="font-mono text-amber-300">barista@brew.hk</strong></span>
+          </div>
+
+          <div class="flex items-center flex-wrap gap-2">
+            <button
+              type="button"
+              onclick="resetToZeroAndReload('brewer')"
+              class="tactile-btn py-2.5 px-3.5 rounded-xl bg-amber-400 text-stone-950 text-xs sm:text-sm font-black border-2 border-[#1F1E1B] cursor-pointer"
+            >
+              🔄 重設 0 / 重新載入
+            </button>
+            <button
+              type="button"
+              id="status-btn-normal"
+              onclick="setShopMode('normal')"
+              class="tactile-btn py-2.5 px-3.5 rounded-xl bg-emerald-400 text-stone-950 text-xs sm:text-sm font-black border-2 border-[#1F1E1B] ring-2 ring-emerald-300 cursor-pointer"
+            >
+              🟢 正常接單
+            </button>
+            <button
+              type="button"
+              id="status-btn-busy"
+              onclick="setShopMode('busy')"
+              class="tactile-btn py-2.5 px-3.5 rounded-xl bg-stone-800 text-amber-300 text-xs sm:text-sm font-bold border-2 border-stone-600 hover:bg-amber-400 hover:text-stone-950 cursor-pointer"
+            >
+              🟡 沖緊稍等
+            </button>
+            <button
+              type="button"
+              onclick="logoutBrewer()"
+              class="tactile-btn py-2.5 px-3 rounded-xl bg-rose-600 text-white text-xs sm:text-sm font-black border-2 border-[#1F1E1B] cursor-pointer"
+            >
+              🚪 登出
+            </button>
+          </div>
+        </div>
+
+        {/* 7 Big Buttons Verifier & KDS */}
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          <div class="lg:col-span-5 space-y-4">
+            <div class="tactile-card p-5 bg-white border-2 border-[#2D2B28] space-y-3">
+              <h3 class="font-black text-base text-[#1F1E1B]">🇭🇰 轉數快 FPS 對數解鎖</h3>
+              <button
+                type="button"
+                onclick="simulateOneClickUnlock()"
+                class="tactile-btn w-full py-3.5 px-4 rounded-xl bg-emerald-400 text-stone-950 font-black text-sm border-2 border-[#2D2B28] cursor-pointer"
+              >
+                ⚡ 一鍵對數解鎖
+              </button>
+              <div class="grid grid-cols-3 gap-2">
+                <button type="button" id="chk-amt-btn" onclick="toggleChk('amt')" class="tactile-btn py-3 px-1 rounded-xl bg-white border-2 border-[#2D2B28] font-black text-xs">
+                  <span id="chk-amt-icon">⬜</span> 銀碼啱
+                </button>
+                <button type="button" id="chk-time-btn" onclick="toggleChk('time')" class="tactile-btn py-3 px-1 rounded-xl bg-white border-2 border-[#2D2B28] font-black text-xs">
+                  <span id="chk-time-icon">⬜</span> 時間啱
+                </button>
+                <button type="button" id="chk-status-btn" onclick="toggleChk('status')" class="tactile-btn py-3 px-1 rounded-xl bg-white border-2 border-[#2D2B28] font-black text-xs">
+                  <span id="chk-status-icon">⬜</span> 已過數
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="lg:col-span-7 tactile-card p-5 bg-white border-2 border-[#2D2B28] space-y-3">
+            <h3 class="font-black text-base text-[#1F1E1B]">🖥️ 沖啡看板 (KDS)</h3>
+            <div id="kds-orders-container" class="space-y-2 text-xs"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    // State
+    let currentView = 'customer';
+    let selectedBean = '自家豆';
+    let orders = [];
+    let brewerLoggedIn = false;
+
+    function switchMainView(view) {
+      currentView = view;
+      document.getElementById('view-customer').classList.toggle('hidden', view !== 'customer');
+      document.getElementById('view-brewer').classList.toggle('hidden', view !== 'brewer');
+      document.getElementById('tab-btn-customer').className = view === 'customer'
+        ? 'px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-black transition bg-[#C15F3D] text-white cursor-pointer'
+        : 'px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-black transition text-[#E5E0D8]/70 hover:text-white cursor-pointer';
+      document.getElementById('tab-btn-brewer').className = view === 'brewer'
+        ? 'px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-black transition bg-[#C15F3D] text-white flex items-center gap-1.5 cursor-pointer'
+        : 'px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-black transition text-[#E5E0D8]/70 hover:text-white flex items-center gap-1.5 cursor-pointer';
+    }
+
+    function selectBean(bean) {
+      selectedBean = bean;
+      document.getElementById('btn-bean-house').className = bean === '自家豆'
+        ? 'tactile-btn py-3 px-3 rounded-xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-1 cursor-pointer bg-amber-300 text-stone-950 border-2 border-[#2D2B28]'
+        : 'tactile-btn py-3 px-3 rounded-xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-1 cursor-pointer bg-[#FAF8F5] text-stone-700 border border-stone-300';
+      document.getElementById('btn-bean-soe').className = bean === 'SOE 單一產地豆'
+        ? 'tactile-btn py-3 px-3 rounded-xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-1 cursor-pointer bg-[#C15F3D] text-white border-2 border-[#2D2B28]'
+        : 'tactile-btn py-3 px-3 rounded-xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-1 cursor-pointer bg-[#FAF8F5] text-stone-700 border border-stone-300';
+      document.getElementById('soe-picker-box').classList.toggle('hidden', bean !== 'SOE 單一產地豆');
+      buildFromVisual();
+    }
+
+    function buildFromVisual() {
+      const drink = document.getElementById('sel-drink').value;
+      const size = document.getElementById('sel-size').value;
+      const milk = document.getElementById('sel-milk').value;
+      const qty = parseInt(document.getElementById('sel-qty').value, 10) || 1;
+
+      let basePrice = 36;
+      if (drink === 'H01') basePrice = 28;
+      if (drink === 'C01') basePrice = 32;
+      if (drink === 'S01') basePrice = 40;
+      if (size === 'L') basePrice += 4;
+      if (size === 'S') basePrice -= 4;
+      if (milk === 'OM') basePrice += 4;
+      if (selectedBean === 'SOE 單一產地豆') basePrice += 5;
+
+      const total = basePrice * qty;
+      document.getElementById('cust-fps-amount-display').textContent = 'HK$' + total;
+      document.getElementById('customer-order-price').textContent = 'HK$' + total;
+      document.getElementById('customer-order-desc').textContent = `${selectedBean} · ${drink} (${size}) · ${qty} 杯`;
+    }
+
+    function parseOrderInput() {
+      const name = document.getElementById('cust-name-input').value.trim() || '客人';
+      const wa = document.getElementById('cust-whatsapp-input').value.trim();
+      const ig = document.getElementById('cust-ig-input').value.trim();
+      document.getElementById('customer-contact-preview').textContent = `聯絡：${name} ${wa ? '· ' + wa : ''} ${ig ? '· ' + ig : ''}`;
+    }
+
+    function handleScreenshotFile(input) {
+      const file = input.files?.[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          document.getElementById('screenshot-preview-img').src = e.target.result;
+          document.getElementById('screenshot-preview-wrap').classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function clearScreenshot() {
+      document.getElementById('screenshot-preview-img').src = '';
+      document.getElementById('screenshot-preview-wrap').classList.add('hidden');
+      document.getElementById('screenshot-file-input').value = '';
+    }
+
+    window.addEventListener('paste', (e) => {
+      const items = e.clipboardData?.items;
+      if (items) {
+        for (let i = 0; i < items.length; i++) {
+          if (items[i].type.indexOf('image') !== -1) {
+            const blob = items[i].getAsFile();
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+              document.getElementById('screenshot-preview-img').src = ev.target.result;
+              document.getElementById('screenshot-preview-wrap').classList.remove('hidden');
+            };
+            reader.readAsDataURL(blob);
+          }
+        }
+      }
+    });
+
+    function customerConfirmOrder() {
+      const desc = document.getElementById('customer-order-desc').textContent;
+      const amt = document.getElementById('customer-order-price').textContent;
+      const banner = document.getElementById('feedback-banner');
+      banner.textContent = `✅ 訂單 #01 已送出！請以下方 WhatsApp 或 IG Message 傳送付款截圖通知開沖。`;
+      banner.classList.remove('hidden');
+    }
+
+    function copyFpsPhone() {
+      navigator.clipboard.writeText('91236789');
+      alert('已複製電話：9123 6789');
+    }
+
+    function copyFpsReceiptPrompt() {
+      navigator.clipboard.writeText('BREW 轉數快 FPS 過數 #01 金額請參照張單');
+      alert('已複製過數備註');
+    }
+
+    function openWhatsAppOrder() {
+      window.open('https://wa.me/85291236789?text=BREW%20Order%20Payment', '_blank');
+    }
+
+    function openIgOrder() {
+      window.open('https://ig.me/m/brew.coffee.hk', '_blank');
+    }
+
+    function resetToZeroAndReload() {
+      document.getElementById('order-input').value = '';
+      document.getElementById('cust-name-input').value = '';
+      document.getElementById('cust-whatsapp-input').value = '';
+      document.getElementById('cust-ig-input').value = '';
+      clearScreenshot();
+      buildFromVisual();
+      parseOrderInput();
+      alert('已全盤歸零重設');
+    }
+
+    // Brewer
+    function quickLoginWithEmail(email) {
+      document.getElementById('brewer-auth-gate').classList.add('hidden');
+      document.getElementById('brewer-workspace').classList.remove('hidden');
+      document.getElementById('active-brewer-email').textContent = email;
+    }
+
+    function handleBrewerLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById('brewer-email-input').value || 'barista@brew.hk';
+      quickLoginWithEmail(email);
+    }
+
+    function logoutBrewer() {
+      document.getElementById('brewer-auth-gate').classList.remove('hidden');
+      document.getElementById('brewer-workspace').classList.add('hidden');
+    }
+
+    function setShopMode(mode) {
+      const normalBtn = document.getElementById('status-btn-normal');
+      const busyBtn = document.getElementById('status-btn-busy');
+      if (mode === 'normal') {
+        normalBtn.className = 'tactile-btn py-2.5 px-3.5 rounded-xl bg-emerald-400 text-stone-950 text-xs sm:text-sm font-black border-2 border-[#1F1E1B] ring-2 ring-emerald-300 cursor-pointer';
+        busyBtn.className = 'tactile-btn py-2.5 px-3.5 rounded-xl bg-stone-800 text-amber-300 text-xs sm:text-sm font-bold border-2 border-stone-600 hover:bg-amber-400 hover:text-stone-950 cursor-pointer';
+      } else {
+        normalBtn.className = 'tactile-btn py-2.5 px-3.5 rounded-xl bg-stone-800 text-emerald-300 text-xs sm:text-sm font-bold border-2 border-stone-600 hover:bg-emerald-400 hover:text-stone-950 cursor-pointer';
+        busyBtn.className = 'tactile-btn py-2.5 px-3.5 rounded-xl bg-amber-400 text-stone-950 text-xs sm:text-sm font-black border-2 border-[#1F1E1B] ring-2 ring-amber-300 cursor-pointer';
+      }
+    }
+
+    // Init
+    buildFromVisual();
+    parseOrderInput();
+  </script>
+</body>
+</html>
